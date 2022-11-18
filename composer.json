@@ -1,0 +1,22 @@
+{
+    "name": "iwoca/iwocapay-magento",
+    "description": "Implementation of the Iwocapay payment service for your Magento store",
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Martijn Swinkels",
+            "email": "martiniswink@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Iwoca\\Iwocapay\\": ""
+        }
+    }
+}
