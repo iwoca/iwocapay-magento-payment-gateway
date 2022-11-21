@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <payment>
+            <iwoca_iwocapay>
+                <title>Iwocapay</title>
+                <mode>0</mode>
+                <model>IwocapayMethodFacade</model>
+                <group>iwoca_iwocapay_group</group>
+                <prod_api_base_url><![CDATA[https://www.iwoca.co.uk/api/lending/edge]]></prod_api_base_url>
+                <staging_api_base_url><![CDATA[https://stage.iwoca-dev.co.uk/api/lending/edge]]></staging_api_base_url>
+                <can_use_checkout>1</can_use_checkout>
+            </iwoca_iwocapay>
+        </payment>
+    </default>
+</config>

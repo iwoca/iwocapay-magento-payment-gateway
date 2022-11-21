@@ -1,0 +1,16 @@
+# Editor
+/.zfproject.xml
+/.buildpath
+/.cache
+/.metadata
+/.project
+/.settings/
+/nbproject/
+/.idea/
+/.csscomb.json
+/.phpstorm.meta.php
+
+# OS files
+__MACOSX/
+[Tt]humbs.db
+*.DS_Store

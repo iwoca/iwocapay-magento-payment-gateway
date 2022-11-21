@@ -10,7 +10,9 @@
             "email": "martiniswink@gmail.com"
         }
     ],
-    "require": {},
+    "require": {
+        "php": "~7.4.0||~8.1.0"
+    },
     "autoload": {
         "files": [
             "registration.php"
@@ -18,5 +20,10 @@
         "psr-4": {
             "Iwoca\\Iwocapay\\": ""
         }
+    },
+    "archive": {
+        "exclude": [
+            ".gitignore"
+        ]
     }
 }
