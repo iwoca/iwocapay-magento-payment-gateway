@@ -2,35 +2,34 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
         <section id="payment">
-            <group id="iwoca_iwocapay" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="iwocapay" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Iwocapay</label>
                 <fieldset_css>iwoca-iwocapay-fieldset</fieldset_css>
                 <frontend_model>Magento\Config\Block\System\Config\Form\Fieldset</frontend_model>
                 <field id="active" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Enabled</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <config_path>payment/iwoca_iwocapay/active</config_path>
+                    <config_path>payment/iwocapay/active</config_path>
                 </field>
-
                 <!-- Required Settings -->
-                <group id="iwoca_iwocapay_required" translate="label" showInDefault="1" showInWebsite="1" showInStore="1" sortOrder="10">
+                <group id="iwocapay_required" translate="label" showInDefault="1" showInWebsite="1" showInStore="1" sortOrder="10">
                     <label>Required Settings</label>
                     <attribute type="expanded">1</attribute>
                     <frontend_model>Magento\Config\Block\System\Config\Form\Fieldset</frontend_model>
                     <field id="seller_access_token" translate="label tooltip" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
                         <label>Seller Access Token</label>
-                        <config_path>payment/iwoca_iwocapay/seller_access_token</config_path>
+                        <config_path>payment/iwocapay/seller_access_token</config_path>
                         <tooltip>This is the token that is used to authenticate any request made to Iwocapay. For access to your seller access token, please contact your account manager.</tooltip>
                     </field>
                     <field id="seller_id" translate="label tooltip" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="0">
                         <label>Seller ID</label>
-                        <config_path>payment/iwoca_iwocapay/seller_id</config_path>
+                        <config_path>payment/iwocapay/seller_id</config_path>
                         <tooltip>The Seller ID is used to identify you in the Iwocapay system.</tooltip>
                     </field>
                     <field id="mode" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="0">
                         <label>Mode</label>
                         <source_model>Iwoca\Iwocapay\Model\Config\Source\Mode</source_model>
-                        <config_path>payment/iwoca_iwocapay/active</config_path>
+                        <config_path>payment/iwocapay/mode</config_path>
                     </field>
                 </group>
 
@@ -41,24 +40,24 @@
                     <field id="allowspecific" translate="label" type="allowspecific" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
                         <label>Payment from Applicable Countries</label>
                         <source_model>Magento\Payment\Model\Config\Source\Allspecificcountries</source_model>
-                        <config_path>payment/iwoca_iwocapay/allowspecific</config_path>
+                        <config_path>payment/iwocapay/allowspecific</config_path>
                     </field>
                     <field id="specificcountry" translate="label" type="multiselect" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="0">
                         <label>Payment from Specific Countries</label>
                         <source_model>Magento\Directory\Model\Config\Source\Country</source_model>
                         <can_be_empty>1</can_be_empty>
-                        <config_path>payment/iwoca_iwocapay/specificcountry</config_path>
+                        <config_path>payment/iwocapay/specificcountry</config_path>
                     </field>
                 </group>
 
                 <!-- Developer Settings -->
-                <group id="iwoca_iwocapay_developer" translate="label" showInDefault="1" showInWebsite="0" showInStore="0" sortOrder="50">
+                <group id="iwocapay_developer" translate="label" showInDefault="1" showInWebsite="0" showInStore="0" sortOrder="50">
                     <frontend_model>Magento\Config\Block\System\Config\Form\Fieldset</frontend_model>
                     <label>Developer Settings</label>
                     <field id="debug_mode" translate="label tooltip" type="select" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
                         <label>Debug mode</label>
                         <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                        <config_path>payment/iwoca_iwocapay/debug_mode</config_path>
+                        <config_path>payment/iwocapay/debug_mode</config_path>
                         <tooltip>Enable additional logging that can help with debugging.</tooltip>
                     </field>
                 </group>

@@ -5,12 +5,11 @@ namespace Iwoca\Iwocapay\Model\Config\Checkout;
 
 use Iwoca\Iwocapay\Model\Config;
 use Magento\Checkout\Model\ConfigProviderInterface;
-use Magento\Checkout\Model\Session as CheckoutSession;
-use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Framework\View\Asset\Repository;
 
 class ConfigProvider implements ConfigProviderInterface
 {
-    public const CODE = 'iwoca_iwocapay';
+    public const CODE = 'iwocapay';
 
     /**
      * @var Config
@@ -18,28 +17,19 @@ class ConfigProvider implements ConfigProviderInterface
     private Config $config;
 
     /**
-     * @var CustomerSession
+     * @var Repository
      */
-    private CustomerSession $customerSession;
-
-    /**
-     * @var CheckoutSession
-     */
-    private CheckoutSession $checkoutSession;
+    private Repository $assetRepository;
 
     /**
      * @param Config $config
-     * @param CustomerSession $customerSession
-     * @param CheckoutSession $checkoutSession
      */
     public function __construct(
-        Config $config,
-        CustomerSession $customerSession,
-        CheckoutSession $checkoutSession
+        Config          $config,
+        Repository $assetRepository,
     ) {
         $this->config = $config;
-        $this->customerSession = $customerSession;
-        $this->checkoutSession = $checkoutSession;
+        $this->assetRepository = $assetRepository;
     }
 
     /**
@@ -51,11 +41,12 @@ class ConfigProvider implements ConfigProviderInterface
     {
         $config = [
             'isActive' => $this->config->isActive(),
-            'sellerAccessKey' => $this->config->getSellerAccessKey(),
+            'sellerAccessToken' => $this->config->getSellerAccessToken(),
             'sellerId' => $this->config->getSellerId(),
             'mode' => $this->config->getMode(),
             'title' => $this->config->getTitle(),
-            'currency' => $this->config->getCurrency()
+            'currency' => $this->config->getCurrency(),
+            'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', [])
         ];
 
         return [

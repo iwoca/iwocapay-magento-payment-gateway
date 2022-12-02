@@ -8,23 +8,34 @@ use Iwoca\Iwocapay\Model\Config\Source\Mode;
 use Magento\Config\Model\Config\Backend\Admin\Custom as AdminConfig;
 use Magento\Directory\Model\Currency;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Payment\Gateway\Config\Config as GatewayConfig;
 use Magento\Store\Model\ScopeInterface;
 
 class Config
 {
 
-    public const XML_CONFIG_PATH_ACTIVE = 'payment/iwoca_iwocapay/active';
-    public const XML_CONFIG_PATH_SELLER_ACCESS_KEY = 'payment/iwoca_iwocapay/seller_access_key';
-    public const XML_CONFIG_PATH_SELLER_ID = 'payment/iwoca_iwocapay/seller_id';
-    public const XML_CONFIG_PATH_MODE = 'payment/iwoca_iwocapay/mode';
-    public const XML_CONFIG_PATH_TITLE = 'payment/iwoca_iwocapay/title';
-    public const XML_CONFIG_PATH_DEBUG_MODE = 'payment/iwoca_iwocapay/debug_mode';
-    public const XML_CONFIG_PATH_CURRENCY = 'payment/iwoca_iwocapay/currency';
-    public const XML_CONFIG_PATH_ALLOW_SPECIFIC = 'payment/iwoca_iwocapay/allowspecific';
-    public const XML_CONFIG_PATH_SPECIFIC_COUNTRIES = 'payment/iwoca_iwocapay/specificcountries';
-    public const XML_CONFIG_PATH_STAGING_API_BASE_URL = 'payment/iwoca_iwocapay/staging_api_base_url';
-    public const XML_CONFIG_PATH_PROD_API_BASE_URL = 'payment/iwoca_iwocapay/prod_api_base_url';
+    public const XML_CONFIG_PATH_ACTIVE = 'payment/iwocapay/active';
+    public const XML_CONFIG_PATH_SELLER_ACCESS_TOKEN = 'payment/iwocapay/seller_access_token';
+    public const XML_CONFIG_PATH_SELLER_ID = 'payment/iwocapay/seller_id';
+    public const XML_CONFIG_PATH_MODE = 'payment/iwocapay/mode';
+    public const XML_CONFIG_PATH_TITLE = 'payment/iwocapay/title';
+    public const XML_CONFIG_PATH_DEBUG_MODE = 'payment/iwocapay/debug_mode';
+    public const XML_CONFIG_PATH_CURRENCY = 'payment/iwocapay/currency';
+    public const XML_CONFIG_PATH_ALLOW_SPECIFIC = 'payment/iwocapay/allowspecific';
+    public const XML_CONFIG_PATH_SPECIFIC_COUNTRIES = 'payment/iwocapay/specificcountries';
+    public const XML_CONFIG_PATH_STAGING_BASE_URL = 'payment/iwocapay/staging_base_url';
+    public const XML_CONFIG_PATH_PROD_BASE_URL = 'payment/iwocapay/prod_base_url';
+    public const XML_CONFIG_PATH_API_BASE_PATH = 'payment/iwocapay/api_base_path';
+    public const XML_CONFIG_PATH_API_PATH_CREATE_ORDER = 'payment/iwocapay/api_path_create_order';
+    public const XML_CONFIG_PATH_API_PATH_GET_ORDER = 'payment/iwocapay/api_path_get_order';
+
+    public const CONFIG_TYPE_CREATE_ORDER_ENDPOINT = 'create-order';
+    public const CONFIG_TYPE_GET_ORDER_ENDPOINT = 'get-order';
+    public const ENDPOINT_CONFIG_MAPPING = [
+        self::CONFIG_TYPE_CREATE_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_CREATE_ORDER,
+        self::CONFIG_TYPE_GET_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_GET_ORDER
+    ];
 
     /**
      * @var ScopeConfigInterface
@@ -51,9 +62,9 @@ class Config
     /**
      * @return string
      */
-    public function getSellerAccessKey(): string
+    public function getSellerAccessToken(): string
     {
-        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_KEY, ScopeInterface::SCOPE_WEBSITE);
+        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
     }
 
     /**
@@ -116,13 +127,59 @@ class Config
     /**
      * @return string
      */
-    public function getApiBaseUrl(): string
+    public function getBaseUrl(): string
     {
-        if ($this->getMode() === Mode::MODE_STAGING) {
-            return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_STAGING_API_BASE_URL);
+        if ($this->getMode() === Mode::STAGING_MODE) {
+            return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_STAGING_BASE_URL);
         }
 
-        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_PROD_API_BASE_URL);
+        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_PROD_BASE_URL);
+    }
+
+    /**
+     * @return string
+     */
+    public function getApiBasePath(): string
+    {
+        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_API_BASE_PATH);
+    }
+
+    /**
+     * @return string
+     */
+    public function getApiBaseUrl(): string
+    {
+        $baseUrl = rtrim($this->getBaseUrl(), '/');
+        $basePath = trim($this->getApiBasePath(), '/');
+        return $baseUrl . '/' . $basePath;
+    }
+
+    /**
+     * @param string $type
+     * @param array $replacementData
+     * @return string
+     * @throws LocalizedException
+     */
+    public function getApiEndpoint(string $type, array $replacementData = []): string
+    {
+        if (!isset(self::ENDPOINT_CONFIG_MAPPING[$type])) {
+            throw new LocalizedException(__('Unknown endpoint type "%1" requested', $type));
+        }
+
+        $replacementData = array_merge([':sellerId' => $this->getSellerId()], $replacementData);
+
+        $apiPath = trim((string) $this->scopeConfig->getValue(self::ENDPOINT_CONFIG_MAPPING[$type]), '/');
+        $matches = [];
+        if (preg_match('~(\:\w+)~', $apiPath, $matches)) {
+            $matches = array_unique($matches);
+            foreach ($matches as $match) {
+                if (isset($replacementData[$match])) {
+                    $apiPath = str_replace($match, $replacementData[$match], $apiPath);
+                }
+            }
+        }
+
+        return $this->getApiBaseUrl() . '/' . $apiPath . '/';
     }
 
     /**
@@ -132,7 +189,7 @@ class Config
      */
     public function getPaymentConfig(string $field, ?int $storeId = null): mixed
     {
-        $path = sprintf(GatewayConfig::DEFAULT_PATH_PATTERN, ConfigProvider::CODE, $field);
+        $path = sprintf(self::DEFAULT_PATH_PATTERN, 'iwoca_iwocapay', $field);
         return $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE, $storeId);
     }
 }

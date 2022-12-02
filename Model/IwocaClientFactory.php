@@ -42,7 +42,8 @@ class IwocaClientFactory
             'base_uri' => rtrim($this->config->getApiBaseUrl(), '/') . '/',
             'headers' => [
                 'Cache-Control' => 'nocache',
-                'Authorization' => sprintf('Bearer %s', $this->config->getSellerAccessKey())
+                'Content-Type' => 'application/json',
+                'Authorization' => sprintf('Bearer %s', $this->config->getSellerAccessToken())
             ],
         ];
 

@@ -2,12 +2,12 @@
 <payment xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Payment:etc/payment.xsd">
     <groups>
-        <group id="iwoca_iwocapay_group">
+        <group id="iwoca">
             <label>Iwocapay</label>
         </group>
     </groups>
     <methods>
-        <method name="iwoca_iwocapay">
+        <method name="iwocapay">
             <allow_multiple_address>1</allow_multiple_address>
         </method>
     </methods>
