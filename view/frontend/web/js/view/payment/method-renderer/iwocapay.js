@@ -4,9 +4,12 @@ define([
     'Magento_Checkout/js/model/quote',
     'Magento_Checkout/js/model/url-builder',
     'Magento_Checkout/js/model/full-screen-loader',
+    'Magento_Ui/js/model/messageList',
+    'Magento_Checkout/js/action/redirect-on-success',
     'mage/storage',
+    'mage/translate',
     'mage/mage'
-], function ($, Component, quote, urlBuilder, fullScreenLoader, storage) {
+], function ($, Component, quote, urlBuilder, fullScreenLoader, globalMessageList, redirectOnSuccessAction, storage, $t) {
     'use strict';
 
     return Component.extend({
@@ -21,6 +24,7 @@ define([
          */
         initialize: function () {
             this._super();
+            redirectOnSuccessAction.redirectUrl = window.checkoutConfig.payment.iwocapay.iwocaCreateOrderUrl;
         },
 
         /**
@@ -29,41 +33,6 @@ define([
          */
         getIwocapayIconSrc: function () {
             return window.checkoutConfig.payment.iwocapay.iconSrc;
-        },
-
-        /**
-         * Redirect to the Iwoca website to continue the payment process.
-         */
-        iwocaRedirect: function () {
-            let iwocaOrderData = this.createIwocaOrder();
-            console.log('iwocaOrderData:', iwocaOrderData);
-        },
-
-        /**
-         * Create an order in Iwoca through the Magento API.
-         */
-        createIwocaOrder: function () {
-            fullScreenLoader.startLoader();
-
-            let createOrderUrl = urlBuilder.createUrl('/iwoca/create-order', {});
-
-            return storage.post(
-                createOrderUrl,
-                JSON.stringify({
-                    cartId: quote.getQuoteId()
-                })
-            ).done(
-                function (response) {
-                    console.log('Success!, Redirecting to Iwoca');
-                    $.mage.redirect(response.order_url);
-                }
-            ).fail(
-                function (response) {
-                    /** @todo: handle failure */
-                    console.log('It broke!', response);
-                    fullScreenLoader.stopLoader();
-                }
-            );
         }
     });
 });

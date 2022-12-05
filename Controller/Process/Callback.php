@@ -14,13 +14,13 @@ use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Message\ManagerInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\Sales\Model\Convert\Order as OrderConverter;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\OrderFactory;
@@ -54,6 +54,10 @@ class Callback implements HttpGetActionInterface
      * @param Session $checkoutSession
      * @param OrderFactory $orderFactory
      * @param OrderRepositoryInterface $orderRepository
+     * @param ManagerInterface $messageManager
+     * @param CartRepositoryInterface $quoteRepository
+     * @param InvoiceService $invoiceService
+     * @param InvoiceRepositoryInterface $invoiceRepository
      */
     public function __construct(
         Context $context,
@@ -87,6 +91,7 @@ class Callback implements HttpGetActionInterface
 
     /**
      * @inheritDoc
+     * @throws LocalizedException
      */
     public function execute()
     {
@@ -151,6 +156,7 @@ class Callback implements HttpGetActionInterface
      * @param OrderInterface|null $order
      * @param string|null $statusCode
      * @return Redirect
+     * @throws NoSuchEntityException
      */
     private function handleFailure(Redirect $redirect, ?OrderInterface $order = null, ?string $statusCode = null): Redirect
     {
@@ -176,7 +182,12 @@ class Callback implements HttpGetActionInterface
         return $redirect;
     }
 
-    private function activateQuoteFromOrder(OrderInterface $order)
+    /**
+     * @param OrderInterface $order
+     * @return void
+     * @throws NoSuchEntityException
+     */
+    private function activateQuoteFromOrder(OrderInterface $order): void
     {
         $quoteId = $order->getQuoteId();
 
@@ -191,13 +202,14 @@ class Callback implements HttpGetActionInterface
      * @param Order $order
      * @param GetOrderInterface $orderResponse
      * @return void
+     * @throws LocalizedException
      */
     private function handleSuccess(Order $order, GetOrderInterface $orderResponse): void
     {
         $this->createOrderInvoice($order, $orderResponse);
         $this->checkoutSession->setLastSuccessQuoteId($order->getQuoteId());
         $this->checkoutSession->setLastQuoteId($order->getQuoteId());
-        $this->checkoutSession->setLastOrderId($order->getIncrementId());
+        $this->checkoutSession->setLastOrderId($order->getId());
         $this->checkoutSession->setLastRealOrderId($order->getRealOrderId());
 
         $order->addCommentToStatusHistory(__(

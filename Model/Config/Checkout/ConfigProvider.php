@@ -5,6 +5,7 @@ namespace Iwoca\Iwocapay\Model\Config\Checkout;
 
 use Iwoca\Iwocapay\Model\Config;
 use Magento\Checkout\Model\ConfigProviderInterface;
+use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Asset\Repository;
 
 class ConfigProvider implements ConfigProviderInterface
@@ -20,6 +21,7 @@ class ConfigProvider implements ConfigProviderInterface
      * @var Repository
      */
     private Repository $assetRepository;
+    private UrlInterface $urlBuilder;
 
     /**
      * @param Config $config
@@ -27,9 +29,11 @@ class ConfigProvider implements ConfigProviderInterface
     public function __construct(
         Config          $config,
         Repository $assetRepository,
+        UrlInterface $urlBuilder
     ) {
         $this->config = $config;
         $this->assetRepository = $assetRepository;
+        $this->urlBuilder = $urlBuilder;
     }
 
     /**
@@ -46,7 +50,8 @@ class ConfigProvider implements ConfigProviderInterface
             'mode' => $this->config->getMode(),
             'title' => $this->config->getTitle(),
             'currency' => $this->config->getCurrency(),
-            'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', [])
+            'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
+            'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder')
         ];
 
         return [

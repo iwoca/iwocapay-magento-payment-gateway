@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Iwoca\Iwocapay\Model\Request;
+namespace Iwoca\Iwocapay\Controller\Process;
 
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
@@ -10,104 +10,105 @@ use Iwoca\Iwocapay\Api\Response\CreateOrderInterface;
 use Iwoca\Iwocapay\Api\Response\CreateOrderInterfaceFactory;
 use Iwoca\Iwocapay\Model\Config;
 use Iwoca\Iwocapay\Model\IwocaClientFactory;
-use Iwoca\Iwocapay\Model\Response\CreateOrder as CreateOrderResponse;
+use Iwoca\Iwocapay\Model\Request\CreateOrderPayload;
+use Magento\Checkout\Model\Session;
+use Magento\Framework\App\Action\HttpGetActionInterface;
+use Magento\Framework\Controller\Result\Redirect;
+use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Message\ManagerInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\CartRepositoryInterface;
-use Magento\Quote\Model\QuoteManagement;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Psr\Http\Message\ResponseInterface;
 
-class CreateOrder
+class CreateOrder implements HttpGetActionInterface
 {
-
-    private CartRepositoryInterface $quoteRepository;
-    private QuoteManagement $quoteManagement;
+    private ResultFactory $resultFactory;
     private CreateOrderPayloadInterfaceFactory $createOrderPayloadFactory;
     private IwocaClientFactory $iwocaClientFactory;
     private Config $config;
     private CreateOrderInterfaceFactory $createOrderInterfaceFactory;
     private Json $jsonSerializer;
     private OrderRepositoryInterface $orderRepository;
+    private Session $checkoutSession;
+    private ManagerInterface $messageManager;
+    private CartRepositoryInterface $quoteRepository;
 
     /**
-     * @param CartRepositoryInterface $quoteRepository
-     * @param QuoteManagement $quoteManagement
+     * @param ResultFactory $resultFactory
      * @param CreateOrderPayloadInterfaceFactory $createOrderPayloadFactory
      * @param IwocaClientFactory $iwocaClientFactory
      * @param Config $config
      * @param CreateOrderInterfaceFactory $createOrderInterfaceFactory
      * @param Json $jsonSerializer
+     * @param OrderRepositoryInterface $orderRepository
+     * @param Session $checkoutSession
+     * @param ManagerInterface $messageManager
+     * @param CartRepositoryInterface $quoteRepository
      */
     public function __construct(
-        CartRepositoryInterface $quoteRepository,
-        QuoteManagement $quoteManagement,
+        ResultFactory $resultFactory,
         CreateOrderPayloadInterfaceFactory $createOrderPayloadFactory,
         IwocaClientFactory $iwocaClientFactory,
         Config $config,
         CreateOrderInterfaceFactory $createOrderInterfaceFactory,
         Json $jsonSerializer,
-        OrderRepositoryInterface $orderRepository
+        OrderRepositoryInterface $orderRepository,
+        Session $checkoutSession,
+        ManagerInterface $messageManager,
+        CartRepositoryInterface $quoteRepository
     ) {
-        $this->quoteRepository = $quoteRepository;
-        $this->quoteManagement = $quoteManagement;
+        $this->resultFactory = $resultFactory;
         $this->createOrderPayloadFactory = $createOrderPayloadFactory;
         $this->iwocaClientFactory = $iwocaClientFactory;
         $this->config = $config;
         $this->createOrderInterfaceFactory = $createOrderInterfaceFactory;
         $this->jsonSerializer = $jsonSerializer;
         $this->orderRepository = $orderRepository;
+        $this->checkoutSession = $checkoutSession;
+        $this->messageManager = $messageManager;
+        $this->quoteRepository = $quoteRepository;
     }
 
     /**
-     * Create an order in Iwoca.
-     *
-     * @param string $cartId
-     * @return CreateOrderResponse
-     * @throws LocalizedException
-     * @throws NoSuchEntityException
+     * @inheritDoc
      */
-    public function execute(string $cartId): CreateOrderResponse
+    public function execute()
     {
-        $order = $this->createMagentoOrder($cartId);
-        $rawResponse = $this->createIwocaOrder($order);
+        /** @var Redirect $redirect */
+        $redirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+        $order = $this->checkoutSession->getLastRealOrder();
+
+        $order->setState(Order::STATE_PENDING_PAYMENT);
+        $order->setStatus(Order::STATE_PENDING_PAYMENT);
+        $order->addCommentToStatusHistory(__('Creating order in Iwocapay.'));
+
+        $this->orderRepository->save($order);
+
+        try {
+            $rawResponse = $this->createIwocaOrder($order);
+        } catch (LocalizedException $e) {
+            return $this->handleFailure($redirect, $order, $e->getMessage());
+        }
         $orderResponse = $this->getCreateOrderResponse($rawResponse);
+
+        $redirectUrl = $orderResponse->getOrderUrl();
 
         $order->addCommentToStatusHistory(
             __(
                 'Order with ID "%1" has been created in Iwoca. Redirecting user to %2 to continue payment.',
                 $orderResponse->getId(),
-                $orderResponse->getOrderUrl()
+                $redirectUrl
             )
         );
 
         $this->orderRepository->save($order);
 
-        return $orderResponse;
-    }
-
-    /**
-     * @param string $cartId
-     * @return OrderInterface
-     * @throws LocalizedException
-     * @throws NoSuchEntityException
-     */
-    private function createMagentoOrder(string $cartId): OrderInterface
-    {
-        $quote = $this->quoteRepository->get($cartId);
-        $order = $this->quoteManagement->submit($quote);
-
-        $order->setState(Order::STATE_PENDING_PAYMENT);
-        $order->setStatus(Order::STATE_PENDING_PAYMENT);
-
-        $order->addCommentToStatusHistory(__('Creating order in Iwocapay.'));
-
-        $this->orderRepository->save($order);
-
-        return $order;
+        return $redirect->setUrl($redirectUrl);
     }
 
     /**
@@ -134,7 +135,6 @@ class CreateOrder
         $jsonResponse = $rawResponse->getBody()->getContents();
         $responseData = $this->jsonSerializer->unserialize($jsonResponse);
 
-        /** @var CreateOrderInterface $createOrderResponse */
         $createOrderResponse = $this->createOrderInterfaceFactory->create();
         $createOrderResponse->setData($responseData['data']);
 
@@ -172,5 +172,52 @@ class CreateOrder
         }
 
         return $rawResponse;
+    }
+
+    /**
+     * @param Redirect $redirect
+     * @param OrderInterface|null $order
+     * @param string|null $message
+     * @return Redirect
+     * @throws NoSuchEntityException
+     */
+    private function handleFailure(Redirect $redirect, ?OrderInterface $order = null, ?string $message = null): Redirect
+    {
+        if ($order) {
+            $order->addCommentToStatusHistory(
+                __(
+                    'Unable to create Iwoca order. Failed with message %1. Canceling order, recreating quote and redirecting user to cart to retry',
+                    $message
+                )
+            );
+
+            $order->setState(Order::STATE_CANCELED);
+            $order->setStatus(Order::STATE_CANCELED);
+
+            $this->orderRepository->save($order);
+
+            $this->activateQuoteFromOrder($order);
+        }
+
+        $this->messageManager->addErrorMessage(__('Something went wrong while placing your order.'));
+        $redirect->setUrl('/checkout/cart');
+
+        return $redirect;
+    }
+
+    /**
+     * @param OrderInterface $order
+     * @return void
+     * @throws NoSuchEntityException
+     */
+    private function activateQuoteFromOrder(OrderInterface $order): void
+    {
+        $quoteId = $order->getQuoteId();
+
+        $quote = $this->quoteRepository->get($quoteId);
+        $quote->setIsActive(1);
+        $this->quoteRepository->save($quote);
+
+        $this->checkoutSession->setQuoteId($quoteId);
     }
 }
