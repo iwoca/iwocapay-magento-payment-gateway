@@ -13,6 +13,8 @@
                 <api_path_create_order><![CDATA[/ecommerce/seller/:sellerId/order]]></api_path_create_order>
                 <api_path_get_order><![CDATA[/ecommerce/order/:orderId]]></api_path_get_order>
                 <can_use_checkout>1</can_use_checkout>
+                <source>iwocaPay_magento_extension</source>
+                <redirect_path>iwocapay/process/callback</redirect_path>
             </iwocapay>
         </payment>
     </default>

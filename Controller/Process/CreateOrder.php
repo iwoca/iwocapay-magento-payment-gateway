@@ -23,7 +23,9 @@ use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Store\Model\StoreManagerInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
 
 class CreateOrder implements HttpGetActionInterface
 {
@@ -37,6 +39,8 @@ class CreateOrder implements HttpGetActionInterface
     private Session $checkoutSession;
     private ManagerInterface $messageManager;
     private CartRepositoryInterface $quoteRepository;
+    private StoreManagerInterface $storeManager;
+    private LoggerInterface $logger;
 
     /**
      * @param ResultFactory $resultFactory
@@ -49,6 +53,7 @@ class CreateOrder implements HttpGetActionInterface
      * @param Session $checkoutSession
      * @param ManagerInterface $messageManager
      * @param CartRepositoryInterface $quoteRepository
+     * @param StoreManagerInterface $storeManager
      */
     public function __construct(
         ResultFactory $resultFactory,
@@ -60,7 +65,9 @@ class CreateOrder implements HttpGetActionInterface
         OrderRepositoryInterface $orderRepository,
         Session $checkoutSession,
         ManagerInterface $messageManager,
-        CartRepositoryInterface $quoteRepository
+        CartRepositoryInterface $quoteRepository,
+        StoreManagerInterface $storeManager,
+        LoggerInterface $logger
     ) {
         $this->resultFactory = $resultFactory;
         $this->createOrderPayloadFactory = $createOrderPayloadFactory;
@@ -72,6 +79,8 @@ class CreateOrder implements HttpGetActionInterface
         $this->checkoutSession = $checkoutSession;
         $this->messageManager = $messageManager;
         $this->quoteRepository = $quoteRepository;
+        $this->storeManager = $storeManager;
+        $this->logger = $logger;
     }
 
     /**
@@ -120,8 +129,11 @@ class CreateOrder implements HttpGetActionInterface
         /**@var CreateOrderPayload $createOrder */
         $createOrder = $this->createOrderPayloadFactory->create();
 
+
         $createOrder->setAmount($order->getTotalDue())
-            ->setReference($order->getIncrementId());
+            ->setReference($order->getIncrementId())
+            ->setSource($this->config->getSource())
+            ->setRedirectUrl($this->getRedirectUrl());
 
         return $createOrder;
     }
@@ -152,6 +164,14 @@ class CreateOrder implements HttpGetActionInterface
 
         $payload = $this->getPayload($order);
 
+        $this->addDebugLog(
+            sprintf(
+                'Payload for creating Iwoca order with increment ID %s. %s',
+                $order->getIncrementId(),
+                $payload->toJson()
+            )
+        );
+
         try {
             $rawResponse = $iwocaClient->post(
                 $this->config->getApiEndpoint(Config::CONFIG_TYPE_CREATE_ORDER_ENDPOINT),
@@ -160,12 +180,26 @@ class CreateOrder implements HttpGetActionInterface
                 ]
             );
         } catch (GuzzleException|LocalizedException $e) {
+            $this->addDebugLog(
+                sprintf(
+                    'Error occured while creating order in Iwoca for order with increment ID %s. Received exception: %s',
+                    $order->getIncrementId(),
+                    $e->getMessage()
+                )
+            );
             $errorMessage = __('Unable to create the order in Iwocapay. %1', $e->getMessage());
             $order->addCommentToStatusHistory($errorMessage);
             throw new LocalizedException($errorMessage, $e);
         }
 
         if ($rawResponse->getStatusCode() !== 201) {
+            $this->addDebugLog(
+                sprintf(
+                    'Received status code %s, but expected 201 (Order Created) for order with increment ID %s',
+                    $rawResponse->getStatusCode(),
+                    $order->getIncrementId()
+                )
+            );
             $errorMessage = __('Unable to create the order in Iwocapay. %1', $rawResponse);
             $order->addCommentToStatusHistory($errorMessage);
             throw new LocalizedException($errorMessage);
@@ -219,5 +253,32 @@ class CreateOrder implements HttpGetActionInterface
         $this->quoteRepository->save($quote);
 
         $this->checkoutSession->setQuoteId($quoteId);
+    }
+
+    /**
+     * @return string
+     */
+    private function getRedirectUrl(): string
+    {
+        try {
+            $baseUrl = rtrim($this->storeManager->getStore()->getBaseUrl(), '/');
+        } catch (NoSuchEntityException $e) {
+            $baseUrl = '';
+        }
+
+        return $baseUrl . '/' . ltrim($this->config->getRedirectPath(), '/');
+    }
+
+    /**
+     * @param string $logMessage
+     * @return void
+     */
+    private function addDebugLog(string $logMessage): void
+    {
+        if (!$this->config->isDebugModeEnabled()) {
+            return;
+        }
+
+        $this->logger->debug($logMessage);
     }
 }

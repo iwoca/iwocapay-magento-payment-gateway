@@ -8,6 +8,8 @@ interface CreateOrderPayloadInterface
     public const AMOUNT ='amount';
     public const REFERENCE ='reference';
     public const ALLOWED_PAYMENT_TERMS ='allowed_payment_terms';
+    public const SOURCE ='source';
+    public const REDIRECT_URL ='redirect_url';
 
     /**
      * @param float $amount
@@ -41,5 +43,27 @@ interface CreateOrderPayloadInterface
      * @return array|null
      */
     public function getAllowedPaymentTerms(): ?array;
+
+    /**
+     * @param string $source
+     * @return CreateOrderPayloadInterface
+     */
+    public function setSource(string $source): CreateOrderPayloadInterface;
+
+    /**
+     * @return string
+     */
+    public function getSource(): string;
+
+    /**
+     * @param string $redirectUrl
+     * @return CreateOrderPayloadInterface
+     */
+    public function setRedirectUrl(string $redirectUrl): CreateOrderPayloadInterface;
+
+    /**
+     * @return string
+     */
+    public function getRedirectUrl(): string;
 
 }

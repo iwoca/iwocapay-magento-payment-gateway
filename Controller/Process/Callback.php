@@ -25,6 +25,7 @@ use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Model\Service\InvoiceService;
+use Psr\Log\LoggerInterface;
 
 class Callback implements HttpGetActionInterface
 {
@@ -43,6 +44,7 @@ class Callback implements HttpGetActionInterface
     private CartRepositoryInterface $quoteRepository;
     private InvoiceService $invoiceService;
     private InvoiceRepositoryInterface $invoiceRepository;
+    private LoggerInterface $logger;
 
     /**
      * @param Context $context
@@ -58,6 +60,7 @@ class Callback implements HttpGetActionInterface
      * @param CartRepositoryInterface $quoteRepository
      * @param InvoiceService $invoiceService
      * @param InvoiceRepositoryInterface $invoiceRepository
+     * @param LoggerInterface $logger
      */
     public function __construct(
         Context $context,
@@ -72,7 +75,8 @@ class Callback implements HttpGetActionInterface
         ManagerInterface $messageManager,
         CartRepositoryInterface $quoteRepository,
         InvoiceService $invoiceService,
-        InvoiceRepositoryInterface $invoiceRepository
+        InvoiceRepositoryInterface $invoiceRepository,
+        LoggerInterface $logger
     ) {
         $this->context = $context;
         $this->resultFactory = $resultFactory;
@@ -87,6 +91,7 @@ class Callback implements HttpGetActionInterface
         $this->quoteRepository = $quoteRepository;
         $this->invoiceService = $invoiceService;
         $this->invoiceRepository = $invoiceRepository;
+        $this->logger = $logger;
     }
 
     /**
@@ -116,6 +121,13 @@ class Callback implements HttpGetActionInterface
 
         $statusCode = $orderResponse->getStatus();
         if ($statusCode !== GetOrderInterface::STATUS_CODE_SUCCESSFUL) {
+            $this->addDebugLog(
+                sprintf(
+                    'Received status %s for order with increment ID %s',
+                    $statusCode,
+                    $orderResponse->getReference()
+                )
+            );
             return $this->handleFailure($redirect, $magentoOrder, $statusCode);
         }
 
@@ -135,12 +147,32 @@ class Callback implements HttpGetActionInterface
     private function getIwocaOrderResponse(string $iwocaOrderId): GetOrderInterface
     {
         $iwocaClient = $this->iwocaClientFactory->create();
-        $rawResponse = $iwocaClient->get(
-            $this->config->getApiEndpoint(
-                Config::CONFIG_TYPE_GET_ORDER_ENDPOINT,
-                [':' . self::IWOCA_ORDER_ID_PARAM => $iwocaOrderId]
-            )
-        );
+        try {
+            $rawResponse = $iwocaClient->get(
+                $this->config->getApiEndpoint(
+                    Config::CONFIG_TYPE_GET_ORDER_ENDPOINT,
+                    [':' . self::IWOCA_ORDER_ID_PARAM => $iwocaOrderId]
+                )
+            );
+        } catch (GuzzleException $e) {
+            $this->addDebugLog(
+                sprintf(
+                    'Error occurred while retrieving Iwoca order response for order with Iwoca ID %s. Received exception %s',
+                    $iwocaOrderId,
+                    $e->getMessage()
+                )
+            );
+            throw $e;
+        } catch (LocalizedException $e) {
+            $this->addDebugLog(
+                sprintf(
+                    'Error occurred while getting API endpoint of type "%s". Exception: %s',
+                    Config::CONFIG_TYPE_GET_ORDER_ENDPOINT,
+                    $e->getMessage()
+                )
+            );
+            throw $e;
+        }
 
         $responseJson = $rawResponse->getBody()->getContents();
         $responseData = $this->jsonSerializer->unserialize($responseJson);
@@ -242,5 +274,18 @@ class Callback implements HttpGetActionInterface
 
         $this->invoiceRepository->save($invoice);
 
+    }
+
+    /**
+     * @param string $logMessage
+     * @return void
+     */
+    private function addDebugLog(string $logMessage): void
+    {
+        if (!$this->config->isDebugModeEnabled()) {
+            return;
+        }
+
+        $this->logger->debug($logMessage);
     }
 }

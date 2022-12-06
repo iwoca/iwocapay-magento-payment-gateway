@@ -9,8 +9,7 @@ use Magento\Framework\DataObject;
 class CreateOrderPayload extends DataObject implements CreateOrderPayloadInterface
 {
     /**
-     * @param float $amount
-     * @return CreateOrderPayloadInterface
+     * @inheritdoc
      */
     public function setAmount(float $amount): CreateOrderPayloadInterface
     {
@@ -18,7 +17,7 @@ class CreateOrderPayload extends DataObject implements CreateOrderPayloadInterfa
     }
 
     /**
-     * @return float
+     * @inheritdoc
      */
     public function getAmount(): float
     {
@@ -26,8 +25,7 @@ class CreateOrderPayload extends DataObject implements CreateOrderPayloadInterfa
     }
 
     /**
-     * @param string $reference
-     * @return CreateOrderPayloadInterface
+     * @inheritdoc
      */
     public function setReference(string $reference): CreateOrderPayloadInterface
     {
@@ -35,7 +33,7 @@ class CreateOrderPayload extends DataObject implements CreateOrderPayloadInterfa
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function getReference(): string
     {
@@ -43,8 +41,7 @@ class CreateOrderPayload extends DataObject implements CreateOrderPayloadInterfa
     }
 
     /**
-     * @param array|null $allowed_payment_terms
-     * @return CreateOrderPayloadInterface
+     * @inheritdoc
      */
     public function setAllowedPaymentTerms(?array $allowed_payment_terms = null): CreateOrderPayloadInterface
     {
@@ -52,11 +49,42 @@ class CreateOrderPayload extends DataObject implements CreateOrderPayloadInterfa
     }
 
     /**
-     * @return array|null
+     * @inheritdoc
      */
     public function getAllowedPaymentTerms(): ?array
     {
         return $this->getData(self::ALLOWED_PAYMENT_TERMS);
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function setSource(string $source): CreateOrderPayloadInterface
+    {
+        return $this->setData(self::SOURCE, $source);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSource(): string
+    {
+        return (string) $this->getData(self::SOURCE);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setRedirectUrl(string $redirectUrl): CreateOrderPayloadInterface
+    {
+        return $this->setData(self::REDIRECT_URL, $redirectUrl);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getRedirectUrl(): string
+    {
+        return (string) $this->getData(self::REDIRECT_URL);
+    }
 }

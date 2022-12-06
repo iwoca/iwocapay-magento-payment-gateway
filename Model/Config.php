@@ -21,6 +21,8 @@ class Config
     public const XML_CONFIG_PATH_MODE = 'payment/iwocapay/mode';
     public const XML_CONFIG_PATH_TITLE = 'payment/iwocapay/title';
     public const XML_CONFIG_PATH_DEBUG_MODE = 'payment/iwocapay/debug_mode';
+    public const XML_PATH_SOURCE = 'payment/iwocapay/source';
+    public const XML_PATH_REDIRECT_PATH = 'payment/iwocapay/redirect_path';
     public const XML_CONFIG_PATH_CURRENCY = 'payment/iwocapay/currency';
     public const XML_CONFIG_PATH_ALLOW_SPECIFIC = 'payment/iwocapay/allowspecific';
     public const XML_CONFIG_PATH_SPECIFIC_COUNTRIES = 'payment/iwocapay/specificcountries';
@@ -98,6 +100,22 @@ class Config
     public function isDebugModeEnabled(): bool
     {
         return $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_DEBUG_MODE);
+    }
+
+    /**
+     * @return string
+     */
+    public function getSource(): string
+    {
+        return (string) $this->scopeConfig->getValue(self::XML_PATH_SOURCE);
+    }
+
+    /**
+     * @return string
+     */
+    public function getRedirectPath(): string
+    {
+        return (string) $this->scopeConfig->getValue(self::XML_PATH_REDIRECT_PATH);
     }
 
     /**

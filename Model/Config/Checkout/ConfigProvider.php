@@ -21,13 +21,19 @@ class ConfigProvider implements ConfigProviderInterface
      * @var Repository
      */
     private Repository $assetRepository;
+
+    /**
+     * @var UrlInterface
+     */
     private UrlInterface $urlBuilder;
 
     /**
      * @param Config $config
+     * @param Repository $assetRepository
+     * @param UrlInterface $urlBuilder
      */
     public function __construct(
-        Config          $config,
+        Config $config,
         Repository $assetRepository,
         UrlInterface $urlBuilder
     ) {
