@@ -5,10 +5,12 @@ namespace Iwoca\Iwocapay\Model;
 
 use Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider;
 use Iwoca\Iwocapay\Model\Config\Source\Mode;
+use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
 use Magento\Config\Model\Config\Backend\Admin\Custom as AdminConfig;
 use Magento\Directory\Model\Currency;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Payment\Gateway\Config\Config as GatewayConfig;
 use Magento\Store\Model\ScopeInterface;
 
@@ -19,6 +21,7 @@ class Config
     public const XML_CONFIG_PATH_SELLER_ACCESS_TOKEN = 'payment/iwocapay/seller_access_token';
     public const XML_CONFIG_PATH_SELLER_ID = 'payment/iwocapay/seller_id';
     public const XML_CONFIG_PATH_MODE = 'payment/iwocapay/mode';
+    public const XML_CONFIG_PATH_ALLOWED_PAYMENT_TERMS = 'payment/iwocapay/allowed_payment_terms';
     public const XML_CONFIG_PATH_TITLE = 'payment/iwocapay/title';
     public const XML_CONFIG_PATH_DEBUG_MODE = 'payment/iwocapay/debug_mode';
     public const XML_PATH_SOURCE = 'payment/iwocapay/source';
@@ -45,11 +48,19 @@ class Config
     private ScopeConfigInterface $scopeConfig;
 
     /**
+     * @var Json
+     */
+    private Json $jsonSerializer;
+
+    /**
      * @param ScopeConfigInterface $scopeConfig
      */
-    public function __construct(ScopeConfigInterface $scopeConfig)
-    {
+    public function __construct(
+        ScopeConfigInterface $scopeConfig,
+        Json $jsonSerializer
+    ){
         $this->scopeConfig = $scopeConfig;
+        $this->jsonSerializer = $jsonSerializer;
     }
 
     /**
@@ -84,6 +95,22 @@ class Config
     public function getMode(): int
     {
         return (int) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_MODE, ScopeInterface::SCOPE_WEBSITE);
+    }
+
+    /**
+     * @return array
+     */
+    public function getAllowedPaymentTerms(): array
+    {
+        $allowedPaymentTerms = $this->scopeConfig->getValue(self::XML_CONFIG_PATH_ALLOWED_PAYMENT_TERMS, ScopeInterface::SCOPE_WEBSITE);
+
+        if ($allowedPaymentTerms) {
+            $allowedPaymentTerms = $this->jsonSerializer->unserialize($allowedPaymentTerms);
+        } else {
+            $allowedPaymentTerms = PaymentTerms::PAY_NOW_PAY_LATER;
+        }
+
+        return $allowedPaymentTerms;
     }
 
     /**

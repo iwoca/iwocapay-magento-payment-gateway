@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Iwoca\Iwocapay\Model\Config\Checkout;
 
 use Iwoca\Iwocapay\Model\Config;
+use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
 use Magento\Checkout\Model\ConfigProviderInterface;
+use Magento\Checkout\Model\Session;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Asset\Repository;
 
@@ -28,6 +30,11 @@ class ConfigProvider implements ConfigProviderInterface
     private UrlInterface $urlBuilder;
 
     /**
+     * @var Session
+     */
+    private Session $checkoutSession;
+
+    /**
      * @param Config $config
      * @param Repository $assetRepository
      * @param UrlInterface $urlBuilder
@@ -35,11 +42,13 @@ class ConfigProvider implements ConfigProviderInterface
     public function __construct(
         Config $config,
         Repository $assetRepository,
-        UrlInterface $urlBuilder
+        UrlInterface $urlBuilder,
+        Session $checkoutSession
     ) {
         $this->config = $config;
         $this->assetRepository = $assetRepository;
         $this->urlBuilder = $urlBuilder;
+        $this->checkoutSession = $checkoutSession;
     }
 
     /**
@@ -50,7 +59,7 @@ class ConfigProvider implements ConfigProviderInterface
     public function getConfig()
     {
         $config = [
-            'isActive' => $this->config->isActive(),
+            'isActive' => $this->isActive(),
             'sellerAccessToken' => $this->config->getSellerAccessToken(),
             'sellerId' => $this->config->getSellerId(),
             'mode' => $this->config->getMode(),
@@ -65,5 +74,37 @@ class ConfigProvider implements ConfigProviderInterface
                 self::CODE => $config
             ]
         ];
+    }
+
+    /**
+     * Check if the payment method is active
+     *
+     * @return bool
+     */
+    public function isActive(): bool
+    {
+        if (!$this->config->isActive()) {
+            return false;
+        }
+
+        $allowedPaymentTerms = $this->config->getAllowedPaymentTerms();
+        $quoteTotal = (float) $this->checkoutSession->getQuote()->getSubtotalWithDiscount();
+        if ($allowedPaymentTerms === PaymentTerms::PAY_LATER && !$this->isQuoteTotalInRange($quoteTotal)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if the quote total falls within the allowed price range for pay later
+     *
+     * @param float $quoteTotal
+     *
+     * @return bool
+     */
+    public function isQuoteTotalInRange(float $quoteTotal): bool
+    {
+        return $quoteTotal >= PaymentTerms::PAY_LATER_MIN_AMOUNT && $quoteTotal <= PaymentTerms::PAY_LATER_MAX_AMOUNT;
     }
 }

@@ -31,6 +31,12 @@
                         <source_model>Iwoca\Iwocapay\Model\Config\Source\Mode</source_model>
                         <config_path>payment/iwocapay/mode</config_path>
                     </field>
+                    <field id="allowed_payment_terms" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
+                        <label>Allowed Payment Terms</label>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\PaymentTerms</source_model>
+                        <config_path>payment/iwocapay/allowed_payment_terms</config_path>
+                        <tooltip>Indicate which payment terms you would like to offer through Iwocapay</tooltip>
+                    </field>
                 </group>
 
                 <!--Country specific settings-->
