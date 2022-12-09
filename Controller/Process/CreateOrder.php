@@ -94,7 +94,7 @@ class CreateOrder implements HttpGetActionInterface
 
         $order->setState(Order::STATE_PENDING_PAYMENT);
         $order->setStatus(Order::STATE_PENDING_PAYMENT);
-        $order->addCommentToStatusHistory(__('Creating order in Iwocapay.'));
+        $order->addCommentToStatusHistory(__('Creating order in iwocaPay.'));
 
         $this->orderRepository->save($order);
 
@@ -188,7 +188,7 @@ class CreateOrder implements HttpGetActionInterface
                     $e->getMessage()
                 )
             );
-            $errorMessage = __('Unable to create the order in Iwocapay. %1', $e->getMessage());
+            $errorMessage = __('Unable to create the order in iwocaPay. %1', $e->getMessage());
             $order->addCommentToStatusHistory($errorMessage);
             throw new LocalizedException($errorMessage, $e);
         }
@@ -201,7 +201,7 @@ class CreateOrder implements HttpGetActionInterface
                     $order->getIncrementId()
                 )
             );
-            $errorMessage = __('Unable to create the order in Iwocapay. %1', $rawResponse);
+            $errorMessage = __('Unable to create the order in iwocaPay. %1', $rawResponse);
             $order->addCommentToStatusHistory($errorMessage);
             throw new LocalizedException($errorMessage);
         }

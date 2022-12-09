@@ -1,6 +1,6 @@
 {
     "name": "iwoca/iwocapay-magento",
-    "description": "Implementation of the Iwocapay payment service for your Magento store",
+    "description": "Implementation of the iwocaPay payment service for your Magento store",
     "type": "magento2-module",
     "version": "1.0.0",
     "license": "MIT",

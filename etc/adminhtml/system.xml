@@ -3,7 +3,7 @@
     <system>
         <section id="payment">
             <group id="iwocapay" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Iwocapay</label>
+                <label>iwocaPay</label>
                 <fieldset_css>iwoca-iwocapay-fieldset</fieldset_css>
                 <frontend_model>Magento\Config\Block\System\Config\Form\Fieldset</frontend_model>
                 <field id="active" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">

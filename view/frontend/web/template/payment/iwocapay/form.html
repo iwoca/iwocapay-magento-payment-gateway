@@ -16,7 +16,7 @@
         <!--/ko-->
         <fieldset class="fieldset" data-bind='attr: {id: "payment_form_" + getCode()}'>
             <div class="payment-method-note">
-                <!-- ko i18n: 'You will be redirected to the Iwoca Ltd. website to finialize your payment.' --><!-- /ko -->
+                <!-- ko i18n: 'Credit option for LTD companies, powered by iwocaPay. You will be redirected to complete your payment' --><!-- /ko -->
             </div>
         </fieldset>
         <div class="checkout-agreements-block">
@@ -30,7 +30,7 @@
                         type="submit"
                         data-bind="click: placeOrder, enable: (getCode() == isChecked())"
                         disabled>
-                    <span data-bind="i18n: 'Pay with Iwocapay'"></span>
+                    <span data-bind="i18n: 'Pay with iwocaPay'"></span>
                 </button>
             </div>
         </div>
