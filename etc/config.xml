@@ -16,6 +16,7 @@
                 <source>iwocaPay_magento_extension</source>
                 <redirect_path>iwocapay/process/callback</redirect_path>
                 <allowed_payment_terms><![CDATA[["PAY_LATER", "PAY_NOW"]]]></allowed_payment_terms>
+                <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
             </iwocapay>
         </payment>
     </default>

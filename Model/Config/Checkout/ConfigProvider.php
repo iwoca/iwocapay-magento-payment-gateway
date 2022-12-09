@@ -87,6 +87,10 @@ class ConfigProvider implements ConfigProviderInterface
             return false;
         }
 
+        if (!in_array($this->config->getCurrency(), $this->config->getAllowedCurrencies())) {
+            return false;
+        }
+
         $allowedPaymentTerms = $this->config->getAllowedPaymentTerms();
         $quoteTotal = (float) $this->checkoutSession->getQuote()->getSubtotalWithDiscount();
         if ($allowedPaymentTerms === PaymentTerms::PAY_LATER && !$this->isQuoteTotalInRange($quoteTotal)) {

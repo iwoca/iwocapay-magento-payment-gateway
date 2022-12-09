@@ -29,6 +29,7 @@ class Config
     public const XML_CONFIG_PATH_CURRENCY = 'payment/iwocapay/currency';
     public const XML_CONFIG_PATH_ALLOW_SPECIFIC = 'payment/iwocapay/allowspecific';
     public const XML_CONFIG_PATH_SPECIFIC_COUNTRIES = 'payment/iwocapay/specificcountries';
+    public const XML_CONFIG_PATH_ALLOWED_CURRENCIES = 'payment/iwocapay/allowed_currencies';
     public const XML_CONFIG_PATH_STAGING_BASE_URL = 'payment/iwocapay/staging_base_url';
     public const XML_CONFIG_PATH_PROD_BASE_URL = 'payment/iwocapay/prod_base_url';
     public const XML_CONFIG_PATH_API_BASE_PATH = 'payment/iwocapay/api_base_path';
@@ -167,6 +168,22 @@ class Config
     public function getSpecificCountries(): array
     {
         return $this->scopeConfig->getValue(self::XML_CONFIG_PATH_SPECIFIC_COUNTRIES, ScopeInterface::SCOPE_WEBSITE);
+    }
+
+    /**
+     * @return array
+     */
+    public function getAllowedCurrencies(): array
+    {
+        $allowedCurrencies = $this->scopeConfig->getValue(self::XML_CONFIG_PATH_ALLOWED_CURRENCIES, ScopeInterface::SCOPE_WEBSITE);
+
+        if ($allowedCurrencies) {
+            $allowedCurrencies = $this->jsonSerializer->unserialize($allowedCurrencies);
+        } else {
+            $allowedCurrencies = ['GBP'];
+        }
+
+        return $allowedCurrencies;
     }
 
     /**
