@@ -59,14 +59,18 @@ class ConfigProvider implements ConfigProviderInterface
     public function getConfig()
     {
         $config = [
-            'isActive' => $this->isActive(),
+            'isActive' => $this->config->isActive(),
             'sellerAccessToken' => $this->config->getSellerAccessToken(),
             'sellerId' => $this->config->getSellerId(),
             'mode' => $this->config->getMode(),
             'title' => $this->config->getTitle(),
             'currency' => $this->config->getCurrency(),
             'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
-            'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder')
+            'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder'),
+            'isPayLaterOnly' => $this->config->getAllowedPaymentTerms() === PaymentTerms::PAY_LATER,
+            'minAmount' => PaymentTerms::PAY_LATER_MIN_AMOUNT,
+            'maxAmount' => PaymentTerms::PAY_LATER_MAX_AMOUNT
+
         ];
 
         return [
@@ -74,41 +78,5 @@ class ConfigProvider implements ConfigProviderInterface
                 self::CODE => $config
             ]
         ];
-    }
-
-    /**
-     * Check if the payment method is active
-     *
-     * @return bool
-     */
-    public function isActive(): bool
-    {
-        if (!$this->config->isActive()) {
-            return false;
-        }
-
-        if (!in_array($this->config->getCurrency(), $this->config->getAllowedCurrencies())) {
-            return false;
-        }
-
-        $allowedPaymentTerms = $this->config->getAllowedPaymentTerms();
-        $quoteTotal = (float) $this->checkoutSession->getQuote()->getSubtotalWithDiscount();
-        if ($allowedPaymentTerms === PaymentTerms::PAY_LATER && !$this->isQuoteTotalInRange($quoteTotal)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if the quote total falls within the allowed price range for pay later
-     *
-     * @param float $quoteTotal
-     *
-     * @return bool
-     */
-    public function isQuoteTotalInRange(float $quoteTotal): bool
-    {
-        return $quoteTotal >= PaymentTerms::PAY_LATER_MIN_AMOUNT && $quoteTotal <= PaymentTerms::PAY_LATER_MAX_AMOUNT;
     }
 }

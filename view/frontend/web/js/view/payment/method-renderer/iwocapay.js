@@ -1,15 +1,9 @@
 define([
     'jquery',
     'Magento_Checkout/js/view/payment/default',
-    'Magento_Checkout/js/model/quote',
-    'Magento_Checkout/js/model/url-builder',
-    'Magento_Checkout/js/model/full-screen-loader',
-    'Magento_Ui/js/model/messageList',
     'Magento_Checkout/js/action/redirect-on-success',
-    'mage/storage',
-    'mage/translate',
     'mage/mage'
-], function ($, Component, quote, urlBuilder, fullScreenLoader, globalMessageList, redirectOnSuccessAction, storage, $t) {
+], function ($, Component, redirectOnSuccessAction) {
     'use strict';
 
     return Component.extend({

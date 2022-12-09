@@ -69,8 +69,21 @@ class Config
      */
     public function isActive(): bool
     {
-        return $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_ACTIVE, ScopeInterface::SCOPE_WEBSITE) &&
-            $this->getSellerId();
+        // Check if the payment method is enabled
+        if (!$this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_ACTIVE, ScopeInterface::SCOPE_WEBSITE)) {
+            return false;
+        }
+
+        // Check if the currency is allowed to be used for this payment method.
+        if (!in_array($this->getCurrency(), $this->getAllowedCurrencies())) {
+            return false;
+        }
+
+        // Check if the required config is set
+        if (!$this->getSellerId() || !$this->getSellerAccessToken()) {
+            return false;
+        }
+         return true;
     }
 
     /**
