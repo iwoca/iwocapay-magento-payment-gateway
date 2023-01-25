@@ -18,6 +18,13 @@ define([
          */
         initialize: function () {
             this._super();
+        },
+
+        /**
+         * Update redirect URL to handle order creation and redirect to Iwoca payment platform.
+         */
+        afterPlaceOrder: function () {
+            this._super();
             redirectOnSuccessAction.redirectUrl = window.checkoutConfig.payment.iwocapay.iwocaCreateOrderUrl;
         },
 
