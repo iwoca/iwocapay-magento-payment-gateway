@@ -130,7 +130,7 @@ class CreateOrder implements HttpGetActionInterface
         $createOrder = $this->createOrderPayloadFactory->create();
 
 
-        $createOrder->setAmount($order->getTotalDue())
+        $createOrder->setAmount((float)$order->getGrandTotal())
             ->setReference($order->getIncrementId())
             ->setAllowedPaymentTerms($this->config->getAllowedPaymentTerms())
             ->setSource($this->config->getSource())
