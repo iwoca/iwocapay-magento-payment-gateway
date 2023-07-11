@@ -116,7 +116,6 @@ class Callback implements HttpGetActionInterface
         }
 
         $magentoOrder = $this->orderFactory->create();
-        $magentoOrder->setCanSendNewEmailFlag(false);
         $magentoOrder->loadByIncrementId($orderResponse->getReference());
         $magentoOrder->addCommentToStatusHistory(__('Iwoca order callback initiated.'));
 

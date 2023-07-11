@@ -114,6 +114,7 @@ class CreateOrder implements HttpGetActionInterface
                 $redirectUrl
             )
         );
+        $order->setCanSendNewEmailFlag(false);
 
         $this->orderRepository->save($order);
 
