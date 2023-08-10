@@ -3,7 +3,7 @@
     <default>
         <payment>
             <iwocapay>
-                <title>Pay in 3</title>
+                <title>iwocaPay</title>
                 <mode>0</mode>
                 <group>iwoca</group>
                 <model>IwocapayFacade</model>
