@@ -3,7 +3,7 @@
     <default>
         <payment>
             <iwocapay>
-                <title>iwocaPay</title>
+                <title>iwocaPay - Pay in monthly instalments</title>
                 <mode>0</mode>
                 <group>iwoca</group>
                 <model>IwocapayFacade</model>
