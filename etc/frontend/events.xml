@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="sales_order_place_after">
+        <observer instance="Iwoca\Iwocapay\Controller\Process\BlockIwocaEmail" name="iwocapay_iwoca_email"/>
+    </event>
+</config>
