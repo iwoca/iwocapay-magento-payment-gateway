@@ -54,6 +54,7 @@ class CreateOrder implements HttpGetActionInterface
      * @param ManagerInterface $messageManager
      * @param CartRepositoryInterface $quoteRepository
      * @param StoreManagerInterface $storeManager
+     * @param LoggerInterface $logger
      */
     public function __construct(
         ResultFactory $resultFactory,
@@ -183,7 +184,7 @@ class CreateOrder implements HttpGetActionInterface
         } catch (GuzzleException|LocalizedException $e) {
             $this->addDebugLog(
                 sprintf(
-                    'Error occured while creating order in Iwoca for order with increment ID %s. Received exception: %s',
+                    'Error occurred while creating order in Iwoca for order with increment ID %s. Received exception: %s',
                     $order->getIncrementId(),
                     $e->getMessage()
                 )
