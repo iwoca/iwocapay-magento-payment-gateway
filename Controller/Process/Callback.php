@@ -22,6 +22,7 @@ use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Model\Service\InvoiceService;
@@ -44,6 +45,7 @@ class Callback implements HttpGetActionInterface
     private CartRepositoryInterface $quoteRepository;
     private InvoiceService $invoiceService;
     private InvoiceRepositoryInterface $invoiceRepository;
+    private OrderSender $orderSender;
     private LoggerInterface $logger;
 
     /**
@@ -60,6 +62,7 @@ class Callback implements HttpGetActionInterface
      * @param CartRepositoryInterface $quoteRepository
      * @param InvoiceService $invoiceService
      * @param InvoiceRepositoryInterface $invoiceRepository
+     * @param OrderSender $orderSender
      * @param LoggerInterface $logger
      */
     public function __construct(
@@ -76,6 +79,7 @@ class Callback implements HttpGetActionInterface
         CartRepositoryInterface $quoteRepository,
         InvoiceService $invoiceService,
         InvoiceRepositoryInterface $invoiceRepository,
+        OrderSender $orderSender,
         LoggerInterface $logger
     ) {
         $this->context = $context;
@@ -91,6 +95,7 @@ class Callback implements HttpGetActionInterface
         $this->quoteRepository = $quoteRepository;
         $this->invoiceService = $invoiceService;
         $this->invoiceRepository = $invoiceRepository;
+        $this->orderSender = $orderSender;
         $this->logger = $logger;
     }
 
@@ -251,6 +256,8 @@ class Callback implements HttpGetActionInterface
 
         $order->setState(Order::STATE_PROCESSING);
         $order->setStatus(Order::STATE_PROCESSING);
+        $order->setCanSendNewEmailFlag(true);
+        $this->orderSender->send($order);
         $this->orderRepository->save($order);
     }
 
