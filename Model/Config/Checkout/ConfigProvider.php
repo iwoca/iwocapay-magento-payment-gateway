@@ -30,11 +30,6 @@ class ConfigProvider implements ConfigProviderInterface
     private UrlInterface $urlBuilder;
 
     /**
-     * @var Session
-     */
-    private Session $checkoutSession;
-
-    /**
      * @param Config $config
      * @param Repository $assetRepository
      * @param UrlInterface $urlBuilder
@@ -42,13 +37,11 @@ class ConfigProvider implements ConfigProviderInterface
     public function __construct(
         Config $config,
         Repository $assetRepository,
-        UrlInterface $urlBuilder,
-        Session $checkoutSession
+        UrlInterface $urlBuilder
     ) {
         $this->config = $config;
         $this->assetRepository = $assetRepository;
         $this->urlBuilder = $urlBuilder;
-        $this->checkoutSession = $checkoutSession;
     }
 
     /**

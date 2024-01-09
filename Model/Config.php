@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 namespace Iwoca\Iwocapay\Model;
 
-use Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider;
 use Iwoca\Iwocapay\Model\Config\Source\Mode;
 use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
-use Magento\Config\Model\Config\Backend\Admin\Custom as AdminConfig;
 use Magento\Directory\Model\Currency;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
@@ -55,6 +53,7 @@ class Config
 
     /**
      * @param ScopeConfigInterface $scopeConfig
+     * @param Json $jsonSerializer
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
@@ -104,7 +103,7 @@ class Config
 
 
     /**
-     * @return string
+     * @return int
      */
     public function getMode(): int
     {
@@ -262,9 +261,9 @@ class Config
      * @param int|null $storeId
      * @return mixed
      */
-    public function getPaymentConfig(string $field, ?int $storeId = null): mixed
+    public function getPaymentConfig(string $field, ?int $storeId = null)
     {
-        $path = sprintf(self::DEFAULT_PATH_PATTERN, 'iwoca_iwocapay', $field);
+        $path = sprintf(GatewayConfig::DEFAULT_PATH_PATTERN, 'iwoca_iwocapay', $field);
         return $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE, $storeId);
     }
 }
