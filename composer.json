@@ -1,29 +1,29 @@
 {
-    "name": "iwoca/iwocapay-magento",
-    "description": "Implementation of the iwocaPay payment service for your Magento store",
-    "type": "magento2-module",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Martijn Swinkels",
-            "email": "martiniswink@gmail.com"
-        }
-    ],
-    "require": {
-        "php": "~7.4.0||~8.1.0",
-        "ext-json": "*"
-    },
-    "autoload": {
-        "files": [
-            "registration.php"
-        ],
-        "psr-4": {
-            "Iwoca\\Iwocapay\\": ""
-        }
-    },
-    "archive": {
-        "exclude": [
-            ".gitignore"
-        ]
+  "name": "iwoca/iwocapay-magento",
+  "description": "Implementation of the iwocaPay payment service for your Magento store",
+  "type": "magento2-module",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Martijn Swinkels",
+      "email": "martiniswink@gmail.com"
     }
+  ],
+  "require": {
+    "php": "~7.4.0||~8.1.0||~8.2.0",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "Iwoca\\Iwocapay\\": ""
+    }
+  },
+  "archive": {
+    "exclude": [
+      ".gitignore"
+    ]
+  }
 }
