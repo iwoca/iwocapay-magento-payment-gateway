@@ -1,0 +1,11 @@
+<widgets xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Widget:etc/widget.xsd">
+    <widget class="Iwoca\Iwocapay\Block\TestWidget" id="test_widget">
+        <label>Test widget</label>
+        <description>Test widget description</description>
+        <parameters>
+            <parameter name="title" xsi:type="text" required="true">
+                <label>Title</label>
+            </parameter>
+        </parameters>
+    </widget>
+</widgets>
