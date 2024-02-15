@@ -7,6 +7,10 @@
         {
             "name": "Martijn Swinkels",
             "email": "martiniswink@gmail.com"
+        },
+        {
+          "name": "Sebastian Rother",
+          "email": "s.rother@iwoca.de"
         }
     ],
     "require": {
