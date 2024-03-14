@@ -9,8 +9,12 @@
             "email": "martiniswink@gmail.com"
         },
         {
-          "name": "Sebastian Rother",
-          "email": "s.rother@iwoca.de"
+            "name": "Sebastian Rother",
+            "email": "s.rother@iwoca.de"
+        },
+        {
+            "name": "Joe McAlister",
+            "email": "j.mcalister@iwoca.co.uk"
         }
     ],
     "require": {
