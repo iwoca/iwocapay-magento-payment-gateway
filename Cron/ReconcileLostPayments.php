@@ -10,10 +10,12 @@ use Psr\Log\LoggerInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use GuzzleHttp\Exception\GuzzleException;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Sales\Model\Order;
 
 class ReconcileLostPayments
 {
     public const IWOCA_ORDER_ID_PARAM = 'orderId';
+
     protected $orderFactory;
     protected IwocaClientFactory $iwocaClientFactory;
     private Config $config;
@@ -136,6 +138,10 @@ class ReconcileLostPayments
     }
 
 
+    /**
+     * We only mark orders as successful here, we don't mark as cancelled if Declined as they may have checked out
+     * via a different method, and we want to avoid cancelling the order
+     */
     public function execute()
     {
         $this->logger->info("iwp: ---");
@@ -149,12 +155,14 @@ class ReconcileLostPayments
                 foreach ($customerOrders as $order) {
                     $reference_id = $order->getIncrementId();
                     $latestOrderId = $this->getLatestStatusForIwocaPayOrder($order);
-                    if ($latestOrderId !== "COMPLETED") {
-                        $this->logger->debug("iwp: Order with id {$reference_id} has not been completed.");
 
-                    }else {
+                    if ($latestOrderId === "SUCCESSFUL") {
                         $this->logger->debug("iwp: Order with id {$reference_id} has been completed and we should mark as done...");
-                        // ... MARK AS COMPLETED HERE
+
+                        $order->setState(Order::STATE_PROCESSING)
+                            ->setStatus(Order::STATE_PROCESSING)
+                            ->addStatusToHistory(Order::STATE_PROCESSING, 'Order set to processing by the ReconcileLostPayments CRON job.', true)
+                            ->save();
                     }
                 }
             }
