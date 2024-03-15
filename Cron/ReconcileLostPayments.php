@@ -223,7 +223,6 @@ class ReconcileLostPayments
                             $this->markOrderAsProcessed($order);
                         }
                         if ($latestStatus === "PENDING") {
-                            $this->logger->error("ReconcileLostPayments: {$order->getUpdatedAt()}");
                             $this->prolongOrKillOrderLife($order);
                         }
                     } catch (\Exception $e) {
