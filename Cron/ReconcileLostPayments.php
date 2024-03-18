@@ -8,13 +8,13 @@ use Iwoca\Iwocapay\Controller\Process\Callback;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
+use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\App\ResourceConnection;
 use Psr\Log\LoggerInterface;
 use GuzzleHttp\Exception\GuzzleException;
-
-use Magento\Framework\App\ResourceConnection;
 
 /**
  * This class attempts to reconcile payments that have dropped off early e.g. they
@@ -84,18 +84,18 @@ class ReconcileLostPayments
     /**
      * Returns all orders which were completed using iwocaPay and are in the "pending payment" state
      *
-     * @return array
+     * @return OrderCollection
      */
-    protected function getPendingIwocaPayOrders(): array
+    protected function getPendingIwocaPayOrders(): OrderCollection
     {
-        $orders = [];
-        foreach ($this->orderFactory->create()->getCollection() as $order) {
-            if ($order->getPayment()->getMethod() === 'iwocapay' && $order->getStatus() === 'pending_payment') {
-                $customerId = $order->getCustomerId();
-                $orders[$customerId][] = $order;
-            }
-        }
-        return $orders;
+        return $this->orderFactory->create()->getCollection()
+            ->join(
+                ['payment' => 'sales_order_payment'],
+                'main_table.entity_id = payment.parent_id',
+                ['method']
+            )
+            ->addFieldToFilter('payment.method', 'iwocapay')
+            ->addFieldToFilter('main_table.status', 'pending_payment');
     }
 
     /**
@@ -116,16 +116,18 @@ class ReconcileLostPayments
     }
 
     /**
-     * Returns the latest status for an iwocaPay order by querying the Ecomm API.
+     * Returns the latest status for an iwocaPay order by querying the e-commerce API.
      *
      * @param $order
      * @return string
+     * @throws GuzzleException
+     * @throws LocalizedException
      */
     protected function getLatestStatusForIwocaPayOrder($order): string
     {
         $extractedOrderID = $this->findUUIDInOrderComments($order);
         if ($extractedOrderID === null) {
-            return throw new LocalizedException(__('Unable to retrieve order id.'));
+            throw new LocalizedException(__('Unable to retrieve order ID.'));
         }
 
         try {
@@ -135,13 +137,19 @@ class ReconcileLostPayments
                     [':' . Callback::IWOCA_ORDER_ID_PARAM => $extractedOrderID]
                 )
             );
-        } catch (GuzzleException|LocalizedException $e) {
-            return $e;
-        }
+            $responseJson = $rawResponse->getBody()->getContents();
+            $responseData = $this->jsonSerializer->unserialize($responseJson);
 
-        $responseJson = $rawResponse->getBody()->getContents();
-        $responseData = $this->jsonSerializer->unserialize($responseJson);
-        return $responseData["data"]["status"] ?? "UNKNOWN";
+            if (!isset($responseData["data"]["status"])) {
+                throw new \Exception("Invalid response format from api.");
+            }
+
+            return $responseData["data"]["status"];
+        } catch (GuzzleException|LocalizedException $e) {
+            throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));
+        } catch (\Exception $e) {
+            throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));
+        }
     }
 
     /**
@@ -215,19 +223,17 @@ class ReconcileLostPayments
     {
         try {
             $orders = $this->getPendingIwocaPayOrders();
-            foreach ($orders as $customerId => $customerOrders) {
-                foreach ($customerOrders as $order) {
-                    try {
-                        $latestStatus = $this->getLatestStatusForIwocaPayOrder($order);
-                        if ($latestStatus === "SUCCESSFUL") {
-                            $this->markOrderAsProcessed($order);
-                        }
-                        if ($latestStatus === "PENDING") {
-                            $this->prolongOrKillOrderLife($order);
-                        }
-                    } catch (\Exception $e) {
-                        $this->logger->error("ReconcileLostPayments: Unable to reconcile order with internal id {$order->getId()}. Error: {$e->getMessage()}");
+            foreach ($orders as $order) {
+                try {
+                    $latestStatus = $this->getLatestStatusForIwocaPayOrder($order);
+                    if ($latestStatus === "SUCCESSFUL") {
+                        $this->markOrderAsProcessed($order);
                     }
+                    if ($latestStatus === "PENDING") {
+                        $this->prolongOrKillOrderLife($order);
+                    }
+                } catch (\Exception $e) {
+                    $this->logger->error("ReconcileLostPayments: Unable to reconcile order with internal id {$order->getId()}. Error: {$e->getMessage()}");
                 }
             }
         } catch (\Exception $e) {
