@@ -13,6 +13,7 @@ use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Psr\Log\LoggerInterface;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -60,6 +61,11 @@ class ReconcileLostPayments
      */
     protected $resourceConnection;
 
+    /**
+     * @var OrderSender
+     */
+    private $orderSender;
+
     public function __construct(
         CollectionFactory  $orderCollectionFactory,
         LoggerInterface    $logger,
@@ -68,7 +74,8 @@ class ReconcileLostPayments
         Config             $config,
         Json               $jsonSerializer,
         TimezoneInterface  $timezone,
-        ResourceConnection $resourceConnection
+        ResourceConnection $resourceConnection,
+        OrderSender $orderSender
     )
     {
         $this->orderCollectionFactory = $orderCollectionFactory;
@@ -79,6 +86,7 @@ class ReconcileLostPayments
         $this->jsonSerializer = $jsonSerializer;
         $this->timezone = $timezone;
         $this->resourceConnection = $resourceConnection;
+        $this->orderSender = $orderSender;
     }
 
     /**
@@ -165,7 +173,10 @@ class ReconcileLostPayments
         $order->setState(Order::STATE_PROCESSING)
             ->setStatus(Order::STATE_PROCESSING)
             ->addStatusToHistory(Order::STATE_PROCESSING, 'Order set to processing by the ReconcileLostPayments CRON job.', true)
+            ->setCanSendNewEmailFlag(true)
             ->save();
+
+        $this->orderSender->send($order);
     }
 
 
