@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Iwoca\Iwocapay\Controller\Process;
@@ -182,7 +183,7 @@ class CreateOrder implements HttpGetActionInterface
                     RequestOptions::JSON => ['data' => $payload->toArray()]
                 ]
             );
-        } catch (GuzzleException|LocalizedException $e) {
+        } catch (GuzzleException | LocalizedException $e) {
             $this->addDebugLog(
                 sprintf(
                     'Error occurred while creating order in Iwoca for order with increment ID %s. Received exception: %s',

@@ -3,4 +3,7 @@
     <event name="sales_model_service_quote_submit_before">
         <observer name="iwoca_disable_place_order_email" instance="Iwoca\Iwocapay\Observer\DisableOrderEmailBeforeQuoteSubmit" shared="false" />
     </event>
+    <event name="controller_front_send_response_before">
+        <observer name="iwoca_iwocapay_cancel_order_and_reactivate_quote" instance="Iwoca\Iwocapay\Observer\CustomerReturnObserver" />
+    </event>
 </config>
