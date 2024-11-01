@@ -176,7 +176,8 @@ class CustomerReturnObserver implements ObserverInterface
 
         try {
             $order->cancel();
-            $order->addStatusHistoryComment('Order canceled as user returned to checkout cart without completing iwocapay.');
+            $order->addStatusHistoryComment(__('Order canceled as user returned to checkout cart without completing iwocaPay.'));
+            $order->addStatusHistoryComment(__('Marked for cancellation in iwocaPay.'));
             $order->save();
         } catch (\Exception $e) {
             $this->logger->error('Error canceling order: ' . $e->getMessage());
