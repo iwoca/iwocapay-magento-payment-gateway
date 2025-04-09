@@ -5,31 +5,63 @@
     <preference for="Iwoca\Iwocapay\Api\Response\GetOrderInterface" type="Iwoca\Iwocapay\Model\Response\GetOrder" />
     <preference for="Iwoca\Iwocapay\Api\Response\PricingInterface" type="Iwoca\Iwocapay\Model\Response\Pricing" />
 
-    <virtualType name="IwocapayFacade" type="Magento\Payment\Model\Method\Adapter">
+    <virtualType name="IwocapayPaylaterFacade" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
-            <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE</argument>
+            <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAYLATER</argument>
             <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
             <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\Info</argument>
-            <argument name="valueHandlerPool" xsi:type="object">IwocapayValueHandlerPool</argument>
-            <argument name="validatorPool" xsi:type="object">IwocapayValidatorPool</argument>
+            <argument name="valueHandlerPool" xsi:type="object">IwocapayPaylaterValueHandlerPool</argument>
+            <argument name="validatorPool" xsi:type="object">IwocapayPaylaterValidatorPool</argument>
         </arguments>
     </virtualType>
 
-    <virtualType name="IwocapayValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+    <virtualType name="IwocapayPaynowFacade" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAYNOW</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\Info</argument>
+            <argument name="valueHandlerPool" xsi:type="object">IwocapayPaynowValueHandlerPool</argument>
+            <argument name="validatorPool" xsi:type="object">IwocapayPaynowValidatorPool</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="IwocapayPaylaterValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
         <arguments>
             <argument name="handlers" xsi:type="array">
-                <item name="default" xsi:type="string">IwocapayDefaultValueHandler</item>
+                <item name="default" xsi:type="string">IwocapayPaylaterDefaultValueHandler</item>
             </argument>
         </arguments>
     </virtualType>
-    <virtualType name="IwocapayDefaultValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+
+    <virtualType name="IwocapayPaynowValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
         <arguments>
-            <argument name="configInterface" xsi:type="object">IwocapayMethodConfig</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">IwocapayPaynowDefaultValueHandler</item>
+            </argument>
         </arguments>
     </virtualType>
-    <virtualType name="IwocapayMethodConfig" type="Magento\Payment\Gateway\Config\Config">
+
+    <virtualType name="IwocapayPaylaterDefaultValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
         <arguments>
-            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE</argument>
+            <argument name="configInterface" xsi:type="object">IwocapayPaylaterMethodConfig</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="IwocapayPaynowDefaultValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">IwocapayPaynowMethodConfig</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="IwocapayPaylaterMethodConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAYLATER</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="IwocapayPaynowMethodConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAYNOW</argument>
         </arguments>
     </virtualType>
 
@@ -46,7 +78,6 @@
         </arguments>
     </virtualType>
 
-    <!-- Custom Logger Definition -->
     <virtualType name="IwocapayLoggerHandler" type="Magento\Framework\Logger\Handler\Base">
         <arguments>
             <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>

@@ -4,15 +4,14 @@ declare(strict_types=1);
 namespace Iwoca\Iwocapay\Model\Config\Checkout;
 
 use Iwoca\Iwocapay\Model\Config;
-use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
 use Magento\Checkout\Model\ConfigProviderInterface;
-use Magento\Checkout\Model\Session;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Asset\Repository;
 
 class ConfigProvider implements ConfigProviderInterface
 {
-    public const CODE = 'iwocapay';
+    public const CODE_PAYLATER = 'iwocapay_paylater';
+    public const CODE_PAYNOW = 'iwocapay_paynow';
 
     /**
      * @var Config
@@ -52,24 +51,26 @@ class ConfigProvider implements ConfigProviderInterface
     public function getConfig()
     {
         $config = [
-            'isActive' => $this->config->isActive(),
-            'sellerAccessToken' => $this->config->getSellerAccessToken(),
-            'sellerId' => $this->config->getSellerId(),
-            'mode' => $this->config->getMode(),
-            'title' => $this->config->getTitle(),
-            'currency' => $this->config->getCurrency(),
-            'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
-            'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder'),
-            'isPayLaterOnly' => $this->config->getAllowedPaymentTerms() === PaymentTerms::PAY_LATER,
-            'minAmount' => PaymentTerms::PAY_LATER_MIN_AMOUNT,
-            'maxAmount' => PaymentTerms::PAY_LATER_MAX_AMOUNT
-
-        ];
-
-        return [
             'payment' => [
-                self::CODE => $config
-            ]
+                self::CODE_PAYLATER => [
+                    'isActive' => $this->config->isActive(self::CODE_PAYLATER),
+                    'title' => $this->config->getTitle(self::CODE_PAYLATER),
+                    'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
+                    'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder'),
+                    'minAmount' => 0, // You might have different min/max amounts for each payment type
+                    'maxAmount' => 999999,
+                ],
+                self::CODE_PAYNOW => [
+                    'isActive' => $this->config->isActive(self::CODE_PAYNOW),
+                    'title' => $this->config->getTitle(self::CODE_PAYNOW),
+                    'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
+                    'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder'),
+                    'minAmount' => 0,
+                    'maxAmount' => 999999,
+                ],
+            ],
         ];
+
+        return $config;
     }
 }

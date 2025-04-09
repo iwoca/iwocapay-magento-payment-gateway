@@ -2,22 +2,34 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
     <default>
         <payment>
-            <iwocapay>
-                <title>Pay Later options for businesses</title>
-                <mode>0</mode>
-                <group>iwoca</group>
+            <iwocapay_paylater>
+                <title>Pay Later with iwocaPay</title>
+                <active>1</active>
                 <model>IwocapayFacade</model>
-                <prod_base_url>https://www.iwoca.co.uk</prod_base_url>
-                <staging_base_url>https://stage.iwoca-dev.co.uk</staging_base_url>
-                <api_base_path>/api/lending/edge/</api_base_path>
-                <api_path_create_order><![CDATA[/ecommerce/seller/:sellerId/order]]></api_path_create_order>
-                <api_path_get_order><![CDATA[/ecommerce/order/:orderId]]></api_path_get_order>
+                <order_status>pending_payment</order_status>
+                <payment_action>authorize</payment_action>
+                <api_key backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
+                <api_secret backend_model="Magento\Config\Model\Config\Backend\Encrypted"/>
+                <sort_order>10</sort_order>
                 <can_use_checkout>1</can_use_checkout>
                 <source>iwocaPay_magento_extension</source>
                 <redirect_path>iwocapay/process/callback</redirect_path>
-                <allowed_payment_terms><![CDATA[["PAY_LATER", "PAY_NOW"]]]></allowed_payment_terms>
                 <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
-            </iwocapay>
+            </iwocapay_paylater>
+            <iwocapay_paynow>
+                <title>Pay Now with iwocaPay</title>
+                <active>1</active>
+                <model>IwocapayFacade</model>
+                <order_status>pending_payment</order_status>
+                <payment_action>sale</payment_action>
+                <api_key backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
+                <api_secret backend_model="Magento\Config\Model\Config\Backend\Encrypted"/>
+                <sort_order>20</sort_order>
+                <can_use_checkout>1</can_use_checkout>
+                <source>iwocaPay_magento_extension</source>
+                <redirect_path>iwocapay/process/callback</redirect_path>
+                <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
+            </iwocapay_paynow>
         </payment>
     </default>
 </config>
