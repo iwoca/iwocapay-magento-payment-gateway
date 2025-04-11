@@ -34,6 +34,30 @@ define([
          */
         getIwocapayIconSrc: function () {
             return window.checkoutConfig.payment.iwocapay.iconSrc;
+        },
+
+        /**
+         * Retrieve the payment option title from the config.
+         * @return string
+         */
+        getPaymentOptionTitle: function () {
+            return window.checkoutConfig.payment[this.getCode()].title;
+        },
+
+        /**
+         * Retrieve the payment option subtitle from the config.
+         * @return string
+         */
+        getPaymentOptionSubtitle: function () {
+            return window.checkoutConfig.payment[this.getCode()].subtitle;
+        },
+
+        /**
+         * Retrieve the payment option button title from the config.
+         * @return string
+         */
+        getPaymentOptionCallToAction: function () {
+            return window.checkoutConfig.payment[this.getCode()].call_to_action;
         }
     });
 });

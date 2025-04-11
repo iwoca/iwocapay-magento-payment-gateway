@@ -7,7 +7,7 @@
         <label data-bind="attr: {'for': getCode()}" class="icon-container">
             <img data-bind="attr: {src: getIwocapayIconSrc(), alt: $t('Iwocapay')}"
                  class="payment-icon"/>
-            <span data-bind="text: getTitle()"></span>
+            <span data-bind="text: getPaymentOptionTitle()"></span>
         </label>
     </div>
     <div class="payment-method-content">
@@ -16,7 +16,7 @@
         <!--/ko-->
         <fieldset class="fieldset" data-bind='attr: {id: "payment_form_" + getCode()}'>
             <div class="payment-method-note">
-                <!-- ko i18n: 'Credit option for LTD companies, powered by iwocaPay. You will be redirected to complete your payment' --><!-- /ko -->
+                <!-- ko i18n: getPaymentOptionSubtitle() --><!-- /ko -->
             </div>
         </fieldset>
         <div class="checkout-agreements-block">
@@ -30,7 +30,7 @@
                         type="submit"
                         data-bind="click: placeOrder, enable: (getCode() == isChecked())"
                         disabled>
-                    <span data-bind="i18n: 'Pay with iwocaPay'"></span>
+                    <span data-bind="i18n: getPaymentOptionCallToAction()"></span>
                 </button>
             </div>
         </div>
