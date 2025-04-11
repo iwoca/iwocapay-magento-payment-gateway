@@ -11,6 +11,7 @@ class PaymentTerms implements OptionSourceInterface
 
     public const PAY_NOW_PAY_LATER = ['PAY_LATER', 'PAY_NOW'];
     public const PAY_LATER = ['PAY_LATER'];
+    public const PAY_NOW = ['PAY_NOW'];
     public const PAY_LATER_MIN_AMOUNT = 150;
     public const PAY_LATER_MAX_AMOUNT = 30000;
 

@@ -135,7 +135,7 @@ class CreateOrder implements HttpGetActionInterface
 
         $createOrder->setAmount((float)$order->getGrandTotal())
             ->setReference($order->getIncrementId())
-            ->setAllowedPaymentTerms($this->config->getAllowedPaymentTerms())
+            ->setAllowedPaymentTerms($this->config->getAllowedPaymentTermOptions($order->getPayment()->getMethod()))
             ->setSource($this->config->getSource())
             ->setRedirectUrl($this->getRedirectUrl());
 

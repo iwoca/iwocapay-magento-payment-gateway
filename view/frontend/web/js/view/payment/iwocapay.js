@@ -28,6 +28,14 @@ function (Component, rendererList, quote) {
                     component: 'Iwoca_Iwocapay/js/view/payment/method-renderer/iwocapay'
                 }
             );
+            if (!window.checkoutConfig.payment.iwocapay.isPayLaterOnly) {
+                rendererList.push(
+                    {
+                        type: 'iwocapay_paynow',
+                        component: 'Iwoca_Iwocapay/js/view/payment/method-renderer/iwocapay'
+                    }
+                );
+            }
         }
     }
 
