@@ -11,7 +11,7 @@ class BlockIwocaEmail implements ObserverInterface
   {
     $order = $observer->getEvent()->getOrder();
     $paymentMethod = $order->getPayment()->getMethod();
-    if ($paymentMethod == 'iwocapay') {
+    if ($paymentMethod == 'iwocapay' || $paymentMethod == 'iwocapay_paylater' || $paymentMethod == 'iwocapay_paynow' ) {
       $order->setCanSendNewEmailFlag(false)->addCommentToStatusHistory(__('iwocaPay: Disabling send email'));
     }
   }

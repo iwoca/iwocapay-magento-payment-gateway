@@ -39,27 +39,27 @@ It checks the following conditions:
     Set the allow_cancel_order flag to true
     (this allows the order to be canceled when the customer returns to the store via the back button)
 
-                Redirect                                           
-              - Referrer === Checkout location                   
-              - Redirect to outside store                        
+                Redirect
+              - Referrer === Checkout location
+              - Redirect to outside store
 +-----------+ => set allow_cancel_order flag to true +----------+
 | Checkout  +--------------------------------------> | iwocaPay |
 +-----------+                                        +----+-+---+
-     ^ ^                                                  | |    
-     | |                                                  | |    
-     | +--------------------------------------------------+ |    
-     |            Back Button                               |    
-     |            - Location === Checkout || Cart           |    
-     |            - allow_cancel_order === true             |    
-     |            => Cancel latest iwocaPay order           |    
-     |            => Recreate latest iwocaPay quote         |    
-     |                                                      |    
-  +--+----+                                                 |    
-  | Store | <-----------------------------------------------+    
-  +-------+    Navigation                                        
-               - No referrer                                     
-               - Location !== Checkout || Cart                   
-               => set allow_cancel_order_flag to false           
+     ^ ^                                                  | |
+     | |                                                  | |
+     | +--------------------------------------------------+ |
+     |            Back Button                               |
+     |            - Location === Checkout || Cart           |
+     |            - allow_cancel_order === true             |
+     |            => Cancel latest iwocaPay order           |
+     |            => Recreate latest iwocaPay quote         |
+     |                                                      |
+  +--+----+                                                 |
+  | Store | <-----------------------------------------------+
+  +-------+    Navigation
+               - No referrer
+               - Location !== Checkout || Cart
+               => set allow_cancel_order_flag to false
  */
 
 class CustomerReturnObserver implements ObserverInterface
@@ -168,7 +168,12 @@ class CustomerReturnObserver implements ObserverInterface
         $order = $this->orderFactory->create()->load($orderId);
         $payment = $order->getPayment();
 
-        if (!$payment || $payment->getMethod() !== 'iwocapay') return;
+        if (
+            !$payment ||
+            !in_array($payment->getMethod(), ['iwocapay', 'iwocapay_paylater', 'iwocapay_paynow'], true)
+        ) {
+            return;
+        }
 
         if ($order->getStatus() !== \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) return;
 

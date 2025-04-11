@@ -102,7 +102,7 @@ class ReconcileLostPayments
                 'main_table.entity_id = payment.parent_id',
                 ['method']
             )
-            ->addFieldToFilter('payment.method', 'iwocapay')
+            ->addFieldToFilter('payment.method', ['in' => ['iwocapay', 'iwocapay_paylater', 'iwocapay_paynow']])
             ->addFieldToFilter('main_table.status', 'pending_payment');
     }
 

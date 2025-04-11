@@ -12,7 +12,8 @@ use Magento\Framework\View\Asset\Repository;
 
 class ConfigProvider implements ConfigProviderInterface
 {
-    public const CODE_PAY_LATER = 'iwocapay';
+    public const CODE_SHARED = 'iwocapay';
+    public const CODE_PAY_LATER = 'iwocapay_paylater';
     public const CODE_PAY_NOW = 'iwocapay_paynow';
 
     /**
@@ -52,38 +53,34 @@ class ConfigProvider implements ConfigProviderInterface
      */
     public function getConfig()
     {
-        $configPayLater = [
+        $configShared = [
             'isActive' => $this->config->isActive(),
             'sellerAccessToken' => $this->config->getSellerAccessToken(),
             'sellerId' => $this->config->getSellerId(),
             'mode' => $this->config->getMode(),
-            'title' => $this->config->getTitle(self::CODE_PAY_LATER),
-            'subtitle' => $this->config->getSubtitle(self::CODE_PAY_LATER),
-            'call_to_action' => $this->config->getCallToAction(self::CODE_PAY_LATER),
             'currency' => $this->config->getCurrency(),
             'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
             'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder'),
             'isPayLaterOnly' => $this->config->getAllowedPaymentTerms() === PaymentTerms::PAY_LATER,
+        ];
+        $configPayLater = [
+            'title' => $this->config->getTitle(self::CODE_PAY_LATER),
+            'subtitle' => $this->config->getSubtitle(self::CODE_PAY_LATER),
+            'call_to_action' => $this->config->getCallToAction(self::CODE_PAY_LATER),
             'minAmount' => PaymentTerms::PAY_LATER_MIN_AMOUNT,
             'maxAmount' => PaymentTerms::PAY_LATER_MAX_AMOUNT
         ];
         $configPayNow = [
-            'isActive' => $this->config->isActive(),
-            'sellerAccessToken' => $this->config->getSellerAccessToken(),
-            'sellerId' => $this->config->getSellerId(),
-            'mode' => $this->config->getMode(),
             'title' => $this->config->getTitle(self::CODE_PAY_NOW),
             'subtitle' => $this->config->getSubtitle(self::CODE_PAY_NOW),
             'call_to_action' => $this->config->getCallToAction(self::CODE_PAY_NOW),
-            'currency' => $this->config->getCurrency(),
-            'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
-            'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder'),
-            'minAmount' => 0, // no min amount for pay now
-            'maxAmount' => PaymentTerms::PAY_LATER_MAX_AMOUNT // TODO: check this amount
+            'minAmount' => PaymentTerms::PAY_NOW_MIN_AMOUNT,
+            'maxAmount' => PaymentTerms::PAY_NOW_MAX_AMOUNT
         ];
 
         return [
             'payment' => [
+                self::CODE_SHARED => $configShared,
                 self::CODE_PAY_LATER => $configPayLater,
                 self::CODE_PAY_NOW => $configPayNow
             ]

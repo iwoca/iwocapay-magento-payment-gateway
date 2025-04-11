@@ -38,7 +38,7 @@
     </virtualType>
     <virtualType name="IwocapayMethodConfig" type="Magento\Payment\Gateway\Config\Config">
         <arguments>
-            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAY_LATER</argument>
+            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_SHARED</argument>
         </arguments>
     </virtualType>
 
