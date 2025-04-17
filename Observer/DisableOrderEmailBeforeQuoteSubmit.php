@@ -21,7 +21,14 @@ class DisableOrderEmailBeforeQuoteSubmit implements ObserverInterface
         /** @var Quote $quote */
         $quote = $event->getQuote();
 
-        if ($quote->getPayment()->getMethod() !== ConfigProvider::CODE_PAY_LATER && $quote->getPayment()->getMethod() !== ConfigProvider::CODE_PAY_NOW && $quote->getPayment()->getMethod() !== ConfigProvider::CODE_SHARED) {
+        $method = $quote->getPayment()->getMethod();
+        $validMethods = [
+            ConfigProvider::CODE_PAY_LATER,
+            ConfigProvider::CODE_PAY_NOW,
+            ConfigProvider::CODE_SHARED,
+        ];
+
+        if (!in_array($method, $validMethods, true)) {
             return $observer;
         }
 

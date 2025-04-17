@@ -101,7 +101,7 @@ class CancelAbandonedOrders
                     [':' . Callback::IWOCA_ORDER_ID_PARAM => $extractedOrderID]
                 )
             );
-        } catch (GuzzleException | LocalizedException $e) {
+        } catch (GuzzleException|LocalizedException $e) {
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));
         } catch (\Exception $e) {
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));

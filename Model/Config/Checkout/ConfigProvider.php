@@ -37,10 +37,11 @@ class ConfigProvider implements ConfigProviderInterface
      * @param UrlInterface $urlBuilder
      */
     public function __construct(
-        Config $config,
-        Repository $assetRepository,
+        Config       $config,
+        Repository   $assetRepository,
         UrlInterface $urlBuilder
-    ) {
+    )
+    {
         $this->config = $config;
         $this->assetRepository = $assetRepository;
         $this->urlBuilder = $urlBuilder;

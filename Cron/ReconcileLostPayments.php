@@ -75,7 +75,7 @@ class ReconcileLostPayments
         Json               $jsonSerializer,
         TimezoneInterface  $timezone,
         ResourceConnection $resourceConnection,
-        OrderSender $orderSender
+        OrderSender        $orderSender
     )
     {
         $this->orderCollectionFactory = $orderCollectionFactory;

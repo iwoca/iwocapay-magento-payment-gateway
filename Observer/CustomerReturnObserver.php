@@ -111,13 +111,13 @@ class CustomerReturnObserver implements ObserverInterface
      * @param RequestInterface $request
      */
     public function __construct(
-        LoggerInterface $logger,
-        QuoteRepository $quoteRepository,
-        CheckoutSession $checkoutSession,
-        OrderFactory $orderFactory,
-        PageIdentifier $pageIdentifier,
+        LoggerInterface         $logger,
+        QuoteRepository         $quoteRepository,
+        CheckoutSession         $checkoutSession,
+        OrderFactory            $orderFactory,
+        PageIdentifier          $pageIdentifier,
         CartRepositoryInterface $cartRepository,
-        RequestInterface $request,
+        RequestInterface        $request,
     ) {
         $this->logger = $logger;
         $this->quoteRepository = $quoteRepository;
