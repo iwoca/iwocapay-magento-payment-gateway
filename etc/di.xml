@@ -7,7 +7,16 @@
 
     <virtualType name="IwocapayFacade" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
-            <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE</argument>
+            <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAY_LATER</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\Info</argument>
+            <argument name="valueHandlerPool" xsi:type="object">IwocapayValueHandlerPool</argument>
+            <argument name="validatorPool" xsi:type="object">IwocapayValidatorPool</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="IwocapaynowFacade" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAY_NOW</argument>
             <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
             <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\Info</argument>
             <argument name="valueHandlerPool" xsi:type="object">IwocapayValueHandlerPool</argument>
@@ -29,7 +38,7 @@
     </virtualType>
     <virtualType name="IwocapayMethodConfig" type="Magento\Payment\Gateway\Config\Config">
         <arguments>
-            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE</argument>
+            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_SHARED</argument>
         </arguments>
     </virtualType>
 

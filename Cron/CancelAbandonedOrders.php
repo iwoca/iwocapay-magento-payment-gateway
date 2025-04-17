@@ -57,7 +57,7 @@ class CancelAbandonedOrders
                 'main_table.entity_id = payment.parent_id',
                 ['method']
             )
-            ->addFieldToFilter('payment.method', 'iwocapay')
+            ->addFieldToFilter('payment.method', ['in' => ['iwocapay', 'iwocapay_paylater', 'iwocapay_paynow']])
             ->addFieldToFilter('main_table.status', Order::STATE_CANCELED);
     }
 
@@ -101,7 +101,7 @@ class CancelAbandonedOrders
                     [':' . Callback::IWOCA_ORDER_ID_PARAM => $extractedOrderID]
                 )
             );
-        } catch (GuzzleException | LocalizedException $e) {
+        } catch (GuzzleException|LocalizedException $e) {
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));
         } catch (\Exception $e) {
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));
