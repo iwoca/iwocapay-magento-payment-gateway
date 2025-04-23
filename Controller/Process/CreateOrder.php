@@ -58,19 +58,20 @@ class CreateOrder implements HttpGetActionInterface
      * @param LoggerInterface $logger
      */
     public function __construct(
-        ResultFactory $resultFactory,
+        ResultFactory                      $resultFactory,
         CreateOrderPayloadInterfaceFactory $createOrderPayloadFactory,
-        IwocaClientFactory $iwocaClientFactory,
-        Config $config,
-        CreateOrderInterfaceFactory $createOrderInterfaceFactory,
-        Json $jsonSerializer,
-        OrderRepositoryInterface $orderRepository,
-        Session $checkoutSession,
-        ManagerInterface $messageManager,
-        CartRepositoryInterface $quoteRepository,
-        StoreManagerInterface $storeManager,
-        LoggerInterface $logger
-    ) {
+        IwocaClientFactory                 $iwocaClientFactory,
+        Config                             $config,
+        CreateOrderInterfaceFactory        $createOrderInterfaceFactory,
+        Json                               $jsonSerializer,
+        OrderRepositoryInterface           $orderRepository,
+        Session                            $checkoutSession,
+        ManagerInterface                   $messageManager,
+        CartRepositoryInterface            $quoteRepository,
+        StoreManagerInterface              $storeManager,
+        LoggerInterface                    $logger
+    )
+    {
         $this->resultFactory = $resultFactory;
         $this->createOrderPayloadFactory = $createOrderPayloadFactory;
         $this->iwocaClientFactory = $iwocaClientFactory;
@@ -135,7 +136,7 @@ class CreateOrder implements HttpGetActionInterface
 
         $createOrder->setAmount((float)$order->getGrandTotal())
             ->setReference($order->getIncrementId())
-            ->setAllowedPaymentTerms($this->config->getAllowedPaymentTerms())
+            ->setAllowedPaymentTerms($this->config->getAllowedPaymentTermOptions($order->getPayment()->getMethod()))
             ->setSource($this->config->getSource())
             ->setRedirectUrl($this->getRedirectUrl());
 
@@ -183,7 +184,7 @@ class CreateOrder implements HttpGetActionInterface
                     RequestOptions::JSON => ['data' => $payload->toArray()]
                 ]
             );
-        } catch (GuzzleException | LocalizedException $e) {
+        } catch (GuzzleException|LocalizedException $e) {
             $this->addDebugLog(
                 sprintf(
                     'Error occurred while creating order in Iwoca for order with increment ID %s. Received exception: %s',

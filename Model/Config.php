@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Iwoca\Iwocapay\Model;
 
+use Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider;
 use Iwoca\Iwocapay\Model\Config\Source\Mode;
 use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
 use Magento\Directory\Model\Currency;
@@ -19,8 +20,10 @@ class Config
     public const XML_CONFIG_PATH_SELLER_ACCESS_TOKEN = 'payment/iwocapay/seller_access_token';
     public const XML_CONFIG_PATH_SELLER_ID = 'payment/iwocapay/seller_id';
     public const XML_CONFIG_PATH_MODE = 'payment/iwocapay/mode';
-    public const XML_CONFIG_PATH_ALLOWED_PAYMENT_TERMS = 'payment/iwocapay/allowed_payment_terms';
-    public const XML_CONFIG_PATH_TITLE = 'payment/iwocapay/title';
+    public const XML_CONFIG_PATH_TITLE = 'payment/%s/title';
+    public const XML_CONFIG_PATH_SUBTITLE = 'payment/%s/subtitle';
+    public const XML_CONFIG_PATH_CALL_TO_ACTION = 'payment/%s/call_to_action';
+    public const XML_CONFIG_PATH_ALLOWED_PAYMENT_TERMS = 'payment/iwocapay/allowed_payment_terms'; // used for settings
     public const XML_CONFIG_PATH_DEBUG_MODE = 'payment/iwocapay/debug_mode';
     public const XML_PATH_SOURCE = 'payment/iwocapay/source';
     public const XML_PATH_REDIRECT_PATH = 'payment/iwocapay/redirect_path';
@@ -57,8 +60,9 @@ class Config
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        Json $jsonSerializer
-    ){
+        Json                 $jsonSerializer
+    )
+    {
         $this->scopeConfig = $scopeConfig;
         $this->jsonSerializer = $jsonSerializer;
     }
@@ -82,7 +86,7 @@ class Config
         if (!$this->getSellerId() || !$this->getSellerAccessToken()) {
             return false;
         }
-         return true;
+        return true;
     }
 
     /**
@@ -90,7 +94,7 @@ class Config
      */
     public function getSellerAccessToken(): string
     {
-        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
+        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
     }
 
     /**
@@ -98,7 +102,7 @@ class Config
      */
     public function getSellerId(): string
     {
-        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ID, ScopeInterface::SCOPE_WEBSITE);
+        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ID, ScopeInterface::SCOPE_WEBSITE);
     }
 
 
@@ -107,7 +111,7 @@ class Config
      */
     public function getMode(): int
     {
-        return (int) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_MODE, ScopeInterface::SCOPE_WEBSITE);
+        return (int)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_MODE, ScopeInterface::SCOPE_WEBSITE);
     }
 
     /**
@@ -127,11 +131,49 @@ class Config
     }
 
     /**
+     * USED FOR GLOBAL SETTINGS
+     *
+     *
+     * @param string $methodCode
+     * @return array
+     */
+    public function getAllowedPaymentTermOptions(string $methodCode): array
+    {
+        if ($methodCode === ConfigProvider::CODE_PAY_NOW) {
+            return PaymentTerms::PAY_NOW;
+        }
+
+        return PaymentTerms::PAY_LATER;
+    }
+
+    /**
+     * @param string $methodCode
      * @return string
      */
-    public function getTitle(): string
+    public function getTitle(string $methodCode): string
     {
-        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_TITLE, ScopeInterface::SCOPE_STORE);
+        $path = sprintf(self::XML_CONFIG_PATH_TITLE, $methodCode);
+        return (string)$this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
+    }
+
+    /**
+     * @param string $methodCode
+     * @return string
+     */
+    public function getSubtitle(string $methodCode): string
+    {
+        $path = sprintf(self::XML_CONFIG_PATH_SUBTITLE, $methodCode);
+        return (string)$this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
+    }
+
+    /**
+     * @param string $methodCode
+     * @return string
+     */
+    public function getCallToAction(string $methodCode): string
+    {
+        $path = sprintf(self::XML_CONFIG_PATH_CALL_TO_ACTION, $methodCode);
+        return (string)$this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
     }
 
     /**
@@ -147,7 +189,7 @@ class Config
      */
     public function getSource(): string
     {
-        return (string) $this->scopeConfig->getValue(self::XML_PATH_SOURCE);
+        return (string)$this->scopeConfig->getValue(self::XML_PATH_SOURCE);
     }
 
     /**
@@ -155,7 +197,7 @@ class Config
      */
     public function getRedirectPath(): string
     {
-        return (string) $this->scopeConfig->getValue(self::XML_PATH_REDIRECT_PATH);
+        return (string)$this->scopeConfig->getValue(self::XML_PATH_REDIRECT_PATH);
     }
 
     /**
@@ -163,7 +205,7 @@ class Config
      */
     public function getCurrency(): string
     {
-        return (string) $this->scopeConfig->getValue(Currency::XML_PATH_CURRENCY_BASE, ScopeInterface::SCOPE_WEBSITE);
+        return (string)$this->scopeConfig->getValue(Currency::XML_PATH_CURRENCY_BASE, ScopeInterface::SCOPE_WEBSITE);
     }
 
     /**
@@ -204,10 +246,10 @@ class Config
     public function getBaseUrl(): string
     {
         if ($this->getMode() === Mode::STAGING_MODE) {
-            return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_STAGING_BASE_URL);
+            return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_STAGING_BASE_URL);
         }
 
-        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_PROD_BASE_URL);
+        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_PROD_BASE_URL);
     }
 
     /**
@@ -215,7 +257,7 @@ class Config
      */
     public function getApiBasePath(): string
     {
-        return (string) $this->scopeConfig->getValue(self::XML_CONFIG_PATH_API_BASE_PATH);
+        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_API_BASE_PATH);
     }
 
     /**
@@ -242,7 +284,7 @@ class Config
 
         $replacementData = array_merge([':sellerId' => $this->getSellerId()], $replacementData);
 
-        $apiPath = trim((string) $this->scopeConfig->getValue(self::ENDPOINT_CONFIG_MAPPING[$type]), '/');
+        $apiPath = trim((string)$this->scopeConfig->getValue(self::ENDPOINT_CONFIG_MAPPING[$type]), '/');
         $matches = [];
         if (preg_match('~(\:\w+)~', $apiPath, $matches)) {
             $matches = array_unique($matches);

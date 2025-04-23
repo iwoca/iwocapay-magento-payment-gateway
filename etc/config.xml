@@ -3,7 +3,6 @@
     <default>
         <payment>
             <iwocapay>
-                <title>Pay Later options for businesses</title>
                 <mode>0</mode>
                 <group>iwoca</group>
                 <model>IwocapayFacade</model>
@@ -18,6 +17,18 @@
                 <allowed_payment_terms><![CDATA[["PAY_LATER", "PAY_NOW"]]]></allowed_payment_terms>
                 <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
             </iwocapay>
+            <iwocapay_paylater>
+                <title>Pay Later with iwocaPay</title>
+                <subtitle>Trade Credit for LTD companies, powered by iwocaPay. Applying won't affect your credit score.</subtitle>
+                <call_to_action>Pay Later</call_to_action>
+                <model>IwocapayFacade</model>
+            </iwocapay_paylater>
+            <iwocapay_paynow>
+                <title>Pay Now with iwocaPay</title>
+                <subtitle>Instant, secure, bank-to-bank payments, powered by iwocaPay.</subtitle>
+                <call_to_action>Pay Now</call_to_action>
+                <model>IwocapaynowFacade</model>
+            </iwocapay_paynow>
         </payment>
     </default>
 </config>
