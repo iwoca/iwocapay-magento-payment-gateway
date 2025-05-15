@@ -7,10 +7,16 @@
         </group>
     </groups>
     <methods>
-        <method name="iwocapay">
+        <method name="iwocapay_paylater">
+            <active>1</active>
+            <title>Pay Later with iwocaPay</title>
+            <model>IwocapayFacade</model>
             <allow_multiple_address>1</allow_multiple_address>
         </method>
         <method name="iwocapay_paynow">
+            <active>1</active>
+            <title>Pay Now with iwocaPay</title>
+            <model>IwocapaynowFacade</model>
             <allow_multiple_address>1</allow_multiple_address>
         </method>
     </methods>

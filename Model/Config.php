@@ -150,10 +150,27 @@ class Config
      * @param string $methodCode
      * @return string
      */
-    public function getTitle(string $methodCode): string
+    public function getTitle(): string
     {
+        return 'Test IwocaPay Title';
+
+        // Use $this->getCode() or a class property to know which method code this is.
+        $methodCode = $this->getCode(); // or however you get it
         $path = sprintf(self::XML_CONFIG_PATH_TITLE, $methodCode);
-        return (string)$this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
+        $title = $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
+        if (!$title) {
+            switch ($methodCode) {
+                case 'iwocapay_paylater':
+                    $title = __('IwocaPay Pay Later');
+                    break;
+                case 'iwocapay_paynow':
+                    $title = __('IwocaPay Pay Now');
+                    break;
+                default:
+                    $title = __('IwocaPay');
+            }
+        }
+        return (string)$title;
     }
 
     /**
