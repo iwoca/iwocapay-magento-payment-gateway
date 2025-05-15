@@ -55,6 +55,11 @@
         </arguments>
     </virtualType>
 
+    <!-- Ensure /payment-method has correct titles -->
+    <type name="Magento\Payment\Model\Method\Adapter">
+        <plugin name="iwocapay_method_title_plugin" type="Iwoca\Iwocapay\Plugin\Payment\MethodTitlePlugin"/>
+    </type>
+
     <!-- Custom Logger Definition -->
     <virtualType name="IwocapayLoggerHandler" type="Magento\Framework\Logger\Handler\Base">
         <arguments>

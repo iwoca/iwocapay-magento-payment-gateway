@@ -5,7 +5,6 @@
             <iwocapay>
                 <mode>0</mode>
                 <group>iwoca</group>
-                <model>IwocapayFacade</model>
                 <prod_base_url>https://www.iwoca.co.uk</prod_base_url>
                 <staging_base_url>https://stage.iwoca-dev.co.uk</staging_base_url>
                 <api_base_path>/api/lending/edge/</api_base_path>
