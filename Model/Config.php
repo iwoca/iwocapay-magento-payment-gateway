@@ -156,16 +156,6 @@ class Config
         return (string)$this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
     }
 
-    public function getTitleForCode(string $methodCode): string
-    {
-        $path = sprintf(self::XML_CONFIG_PATH_TITLE, $methodCode);
-        $title = $this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
-        if (!$title) {
-            return "iwocaPay";
-        }
-        return $title;
-    }
-
     /**
      * @param string $methodCode
      * @return string
