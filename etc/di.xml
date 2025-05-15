@@ -5,18 +5,6 @@
     <preference for="Iwoca\Iwocapay\Api\Response\GetOrderInterface" type="Iwoca\Iwocapay\Model\Response\GetOrder" />
     <preference for="Iwoca\Iwocapay\Api\Response\PricingInterface" type="Iwoca\Iwocapay\Model\Response\Pricing" />
 
-    <virtualType name="IwocapayPayLaterMethodConfig" type="Magento\Payment\Gateway\Config\Config">
-        <arguments>
-            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAY_LATER</argument>
-        </arguments>
-    </virtualType>
-
-    <virtualType name="IwocapayPayNowMethodConfig" type="Magento\Payment\Gateway\Config\Config">
-        <arguments>
-            <argument name="methodCode" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAY_NOW</argument>
-        </arguments>
-    </virtualType>
-
     <virtualType name="IwocapayFacade" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
             <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAY_LATER</argument>
@@ -26,7 +14,6 @@
             <argument name="validatorPool" xsi:type="object">IwocapayValidatorPool</argument>
         </arguments>
     </virtualType>
-
     <virtualType name="IwocapaynowFacade" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
             <argument name="code" xsi:type="const">Iwoca\Iwocapay\Model\Config\Checkout\ConfigProvider::CODE_PAY_NOW</argument>
