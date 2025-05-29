@@ -20,6 +20,7 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
+use Magento\Sales\Model\Order\Email\Sender\InvoiceSender;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Email\Sender\OrderSender;
@@ -45,6 +46,7 @@ class Callback implements HttpGetActionInterface
     private CartRepositoryInterface $quoteRepository;
     private InvoiceService $invoiceService;
     private InvoiceRepositoryInterface $invoiceRepository;
+    private InvoiceSender $invoiceSender;
     private OrderSender $orderSender;
     private LoggerInterface $logger;
 
@@ -79,6 +81,7 @@ class Callback implements HttpGetActionInterface
         CartRepositoryInterface $quoteRepository,
         InvoiceService $invoiceService,
         InvoiceRepositoryInterface $invoiceRepository,
+        InvoiceSender $invoiceSender,
         OrderSender $orderSender,
         LoggerInterface $logger
     ) {
@@ -95,6 +98,7 @@ class Callback implements HttpGetActionInterface
         $this->quoteRepository = $quoteRepository;
         $this->invoiceService = $invoiceService;
         $this->invoiceRepository = $invoiceRepository;
+        $this->invoiceSender = $invoiceSender;
         $this->orderSender = $orderSender;
         $this->logger = $logger;
     }
@@ -278,6 +282,8 @@ class Callback implements HttpGetActionInterface
         $invoice->setRequestedCaptureCase(Invoice::CAPTURE_ONLINE);
         $invoice->setTransactionId($orderResponse->getPayLinkId());
         $invoice->register();
+        $invoice->setEmailSent(true);
+        $this->invoiceSender->send($invoice);
 
         $this->invoiceRepository->save($invoice);
 
