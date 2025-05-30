@@ -41,6 +41,15 @@
                         <config_path>payment/iwocapay/allowed_payment_terms</config_path>
                         <tooltip>Indicate which payment terms you would like to offer through Iwocapay</tooltip>
                     </field>
+                    <field id="send_invoice_emails" translate="label" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Send Invoice Emails</label>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                        <config_path>payment/iwocapay/send_invoice_emails</config_path>
+                        <comment>Set to 'Yes' to send invoice emails automatically.</comment>
+                        <depends>
+                            <field id="active">1</field>
+                        </depends>
+                    </field>
                 </group>
 
                 <!--Country specific settings-->

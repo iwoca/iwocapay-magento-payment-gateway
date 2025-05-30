@@ -28,6 +28,7 @@ use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Model\Service\InvoiceService;
 use Psr\Log\LoggerInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 
 class Callback implements HttpGetActionInterface
 {
@@ -49,6 +50,7 @@ class Callback implements HttpGetActionInterface
     private InvoiceSender $invoiceSender;
     private OrderSender $orderSender;
     private LoggerInterface $logger;
+    private ScopeConfigInterface $scopeConfig;
 
     /**
      * @param Context $context
@@ -83,7 +85,8 @@ class Callback implements HttpGetActionInterface
         InvoiceRepositoryInterface $invoiceRepository,
         InvoiceSender $invoiceSender,
         OrderSender $orderSender,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig
     ) {
         $this->context = $context;
         $this->resultFactory = $resultFactory;
@@ -101,6 +104,7 @@ class Callback implements HttpGetActionInterface
         $this->invoiceSender = $invoiceSender;
         $this->orderSender = $orderSender;
         $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -282,8 +286,17 @@ class Callback implements HttpGetActionInterface
         $invoice->setRequestedCaptureCase(Invoice::CAPTURE_ONLINE);
         $invoice->setTransactionId($orderResponse->getPayLinkId());
         $invoice->register();
-        $invoice->setEmailSent(true);
-        $this->invoiceSender->send($invoice);
+
+        $sendInvoiceEmails = $this->scopeConfig->isSetFlag(
+            'payment/iwocapay/send_invoice_emails',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $order->getStoreId()
+        );
+
+        if ($sendInvoiceEmails) {
+            $invoice->setEmailSent(true);
+            $this->invoiceSender->send($invoice);
+        }
 
         $this->invoiceRepository->save($invoice);
 
