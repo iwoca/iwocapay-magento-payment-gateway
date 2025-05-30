@@ -7,7 +7,7 @@
         </group>
     </groups>
     <methods>
-        <method name="iwocapay">
+        <method name="iwocapay_paylater">
             <allow_multiple_address>1</allow_multiple_address>
         </method>
         <method name="iwocapay_paynow">
