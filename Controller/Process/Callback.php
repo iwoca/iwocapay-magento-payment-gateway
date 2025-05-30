@@ -20,6 +20,7 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
+use Magento\Sales\Model\Order\Email\Sender\InvoiceSender;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Email\Sender\OrderSender;
@@ -27,6 +28,7 @@ use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Model\Service\InvoiceService;
 use Psr\Log\LoggerInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 
 class Callback implements HttpGetActionInterface
 {
@@ -45,8 +47,10 @@ class Callback implements HttpGetActionInterface
     private CartRepositoryInterface $quoteRepository;
     private InvoiceService $invoiceService;
     private InvoiceRepositoryInterface $invoiceRepository;
+    private InvoiceSender $invoiceSender;
     private OrderSender $orderSender;
     private LoggerInterface $logger;
+    private ScopeConfigInterface $scopeConfig;
 
     /**
      * @param Context $context
@@ -79,8 +83,10 @@ class Callback implements HttpGetActionInterface
         CartRepositoryInterface $quoteRepository,
         InvoiceService $invoiceService,
         InvoiceRepositoryInterface $invoiceRepository,
+        InvoiceSender $invoiceSender,
         OrderSender $orderSender,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig
     ) {
         $this->context = $context;
         $this->resultFactory = $resultFactory;
@@ -95,8 +101,10 @@ class Callback implements HttpGetActionInterface
         $this->quoteRepository = $quoteRepository;
         $this->invoiceService = $invoiceService;
         $this->invoiceRepository = $invoiceRepository;
+        $this->invoiceSender = $invoiceSender;
         $this->orderSender = $orderSender;
         $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -278,6 +286,17 @@ class Callback implements HttpGetActionInterface
         $invoice->setRequestedCaptureCase(Invoice::CAPTURE_ONLINE);
         $invoice->setTransactionId($orderResponse->getPayLinkId());
         $invoice->register();
+
+        $sendInvoiceEmails = $this->scopeConfig->isSetFlag(
+            'payment/iwocapay/send_invoice_emails',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $order->getStoreId()
+        );
+
+        if ($sendInvoiceEmails) {
+            $invoice->setEmailSent(true);
+            $this->invoiceSender->send($invoice);
+        }
 
         $this->invoiceRepository->save($invoice);
 
