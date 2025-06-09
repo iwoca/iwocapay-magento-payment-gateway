@@ -286,6 +286,7 @@ class Callback implements HttpGetActionInterface
         $invoice->setRequestedCaptureCase(Invoice::CAPTURE_ONLINE);
         $invoice->setTransactionId($orderResponse->getPayLinkId());
         $invoice->register();
+        $this->invoiceRepository->save($invoice);
 
         $sendInvoiceEmails = $this->scopeConfig->isSetFlag(
             'payment/iwocapay/send_invoice_emails',
@@ -297,8 +298,6 @@ class Callback implements HttpGetActionInterface
             $invoice->setEmailSent(true);
             $this->invoiceSender->send($invoice);
         }
-
-        $this->invoiceRepository->save($invoice);
 
     }
 
