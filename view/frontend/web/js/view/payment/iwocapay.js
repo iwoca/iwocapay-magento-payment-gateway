@@ -27,7 +27,10 @@ define([
         }
 
         // - verify max and min amounts
-        var quoteGrandTotal = quote.totals()['grand_total'];
+        var grandTotalSegment = quote.totals()?.total_segments?.find(function(s) {
+            return s.code === 'grand_total';
+        });
+        var quoteGrandTotal = grandTotalSegment?.value || 0;
         var minPayLater = payLater.minAmount;
         var maxPayLater = payLater.maxAmount;
         var minPayNow = payNow.minAmount;
