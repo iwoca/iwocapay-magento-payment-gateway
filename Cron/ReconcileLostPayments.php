@@ -22,7 +22,7 @@ use GuzzleHttp\Exception\GuzzleException;
  * fell out of the flow after draw-down but before redirecting back to the merchant.
  *
  * It also prolongs iwocaPay orders so that they aren't automatically cleared after
- * a user set timeout. Instead, 48 hours is used.
+ * a user set timeout. Instead, 72 hours is used.
  */
 class ReconcileLostPayments
 {
@@ -181,7 +181,7 @@ class ReconcileLostPayments
 
 
     /**
-     * Returns if the order is within 48 hours of creation.
+     * Returns if the order is within 72 hours of creation.
      *
      * @param $order
      * @return bool
@@ -190,11 +190,11 @@ class ReconcileLostPayments
     {
         $createdAtTimestamp = strtotime($order->getCreatedAt());
         $differenceInSeconds = $this->timezone->scopeTimeStamp() - $createdAtTimestamp;
-        return $differenceInSeconds < (48 * 3600);
+        return $differenceInSeconds < (72 * 3600);
     }
 
     /**
-     * If the order is less than 48 hours old prolong the updated_at date to prevent clean-up.
+     * If the order is less than 72 hours old prolong the updated_at date to prevent clean-up.
      *
      * @param $order
      * @return void
@@ -221,7 +221,7 @@ class ReconcileLostPayments
      *      - We mark it as processed.
      * - "PENDING"
      *      - We alter the updated_at entry so that it is not killed by Magento\Sales\Model\CronJob\CleanExpiredOrders
-     *        this is done by consistently pushing the last modified date to present time until it has been 48 hours
+     *        this is done by consistently pushing the last modified date to present time until it has been 72 hours
      *        since the order creation. At this point we no longer bump the modified date, allowing it to be cleaned up
      *        as expected.
      * - "UNSUCCESSFUL"
