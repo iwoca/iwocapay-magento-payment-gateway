@@ -251,6 +251,11 @@ class Callback implements HttpGetActionInterface
      */
     private function handleSuccess(Order $order, GetOrderInterface $orderResponse): void
     {
+        if ($order->getState() === Order::STATE_PROCESSING || $order->hasInvoices()) {
+            $this->logger->info("iwocaPay handleSuccess: Order {$order->getId()} already processed.");
+            return;
+        }
+
         $this->createOrderInvoice($order, $orderResponse);
         $this->checkoutSession->setLastSuccessQuoteId($order->getQuoteId());
         $this->checkoutSession->setLastQuoteId($order->getQuoteId());
