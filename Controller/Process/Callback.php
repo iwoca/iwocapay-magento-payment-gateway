@@ -243,6 +243,14 @@ class Callback implements HttpGetActionInterface
         $this->checkoutSession->setQuoteId($quoteId);
     }
 
+    private function setCheckoutSessionOrderData(Order $order): void
+    {
+        $this->checkoutSession->setLastSuccessQuoteId($order->getQuoteId());
+        $this->checkoutSession->setLastQuoteId($order->getQuoteId());
+        $this->checkoutSession->setLastOrderId($order->getId());
+        $this->checkoutSession->setLastRealOrderId($order->getRealOrderId());
+    }
+
     /**
      * @param Order $order
      * @param GetOrderInterface $orderResponse
@@ -253,14 +261,12 @@ class Callback implements HttpGetActionInterface
     {
         if ($order->getState() === Order::STATE_PROCESSING || $order->hasInvoices()) {
             $this->logger->info("iwocaPay handleSuccess: Order {$order->getId()} already processed.");
+            $this->setCheckoutSessionOrderData($order);
             return;
         }
 
         $this->createOrderInvoice($order, $orderResponse);
-        $this->checkoutSession->setLastSuccessQuoteId($order->getQuoteId());
-        $this->checkoutSession->setLastQuoteId($order->getQuoteId());
-        $this->checkoutSession->setLastOrderId($order->getId());
-        $this->checkoutSession->setLastRealOrderId($order->getRealOrderId());
+        $this->setCheckoutSessionOrderData($order);
 
         $order->addCommentToStatusHistory(__(
             'Iwoca payment with amount "%1" was successful. Redirecting customer to success page.',
