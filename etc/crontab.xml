@@ -8,7 +8,7 @@
         </job>
         <job name="iwoca_pay_cancel_abandoned_order" instance="Iwoca\Iwocapay\Cron\CancelAbandonedOrders"
              method="execute">
-            <schedule>*/5 * * * *</schedule>
+            <schedule>*/15 * * * *</schedule>
         </job>
     </group>
 </config>
