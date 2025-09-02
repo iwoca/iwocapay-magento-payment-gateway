@@ -60,7 +60,7 @@ class ConfigProvider implements ConfigProviderInterface
             'sellerId' => $this->config->getSellerId(),
             'mode' => $this->config->getMode(),
             'currency' => $this->config->getCurrency(),
-            'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.png', []),
+            'iconSrc' => $this->assetRepository->getUrlWithParams('Iwoca_Iwocapay::images/iwocapay-icon.svg', []),
             'iwocaCreateOrderUrl' => $this->urlBuilder->getRouteUrl('iwocapay/process/createOrder'),
             'isPayLaterOnly' => $this->config->getAllowedPaymentTerms() === PaymentTerms::PAY_LATER,
         ];
