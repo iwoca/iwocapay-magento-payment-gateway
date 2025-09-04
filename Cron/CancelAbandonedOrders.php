@@ -87,11 +87,16 @@ class CancelAbandonedOrders
     protected function shouldNotRunOnOrder($order): bool
     {
         foreach ($order->getStatusHistoryCollection() as $comment) {
-            if (strpos($comment->getComment(), $this->ERROR_CANCELLING_TERMINAL_STATE) !== false) {
+            $commentText = $comment->getComment();
+            if ($commentText === null) {
+                continue;
+            }
+
+            if (strpos($commentText, $this->ERROR_CANCELLING_TERMINAL_STATE) !== false) {
                 return true;
             }
 
-            if (strpos($comment->getComment(), $this->SUCCESSFUL_SYNC_STATE) !== false) {
+            if (strpos($commentText, $this->SUCCESSFUL_SYNC_STATE) !== false) {
                 return true;
             }
         }
