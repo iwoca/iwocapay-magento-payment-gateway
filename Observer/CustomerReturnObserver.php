@@ -14,6 +14,7 @@ use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 
 /*
 This observer handles the restoration on iwocaPay shopping carts.
@@ -98,6 +99,10 @@ class CustomerReturnObserver implements ObserverInterface
      * @var RequestInterface
      */
     protected $request;
+    /**
+     * @var ScopeConfigInterface
+     */
+    protected $scopeConfig;
 
     /**
      * Constructor
@@ -118,6 +123,7 @@ class CustomerReturnObserver implements ObserverInterface
         PageIdentifier          $pageIdentifier,
         CartRepositoryInterface $cartRepository,
         RequestInterface        $request,
+        ScopeConfigInterface    $scopeConfig,
     ) {
         $this->logger = $logger;
         $this->quoteRepository = $quoteRepository;
@@ -126,6 +132,7 @@ class CustomerReturnObserver implements ObserverInterface
         $this->pageIdentifier = $pageIdentifier;
         $this->cartRepository = $cartRepository;
         $this->request = $request;
+        $this->scopeConfig = $scopeConfig;
     }
 
 
@@ -179,13 +186,22 @@ class CustomerReturnObserver implements ObserverInterface
 
         if (!$order->canCancel()) return;
 
-        try {
-            $order->cancel();
-            $order->addStatusHistoryComment(__('Order canceled as user returned to checkout cart without completing iwocaPay.'));
-            $order->addStatusHistoryComment(__('Marked for cancellation in iwocaPay.'));
+        $isAbandonedCartCancellationDisabled = $this->scopeConfig->getValue(
+            'payment/iwocapay/advanced/disable_abandoned_cart_cancellations',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
+        if ($isAbandonedCartCancellationDisabled) {
+            $order->addStatusHistoryComment(__('User returned to checkout cart without completing iwocaPay. iwocaPay will not automatically cancel the order as this option is disabled in settings.'));
             $order->save();
-        } catch (\Exception $e) {
-            $this->logger->error('Error canceling order: ' . $e->getMessage());
+        }else {
+            try {
+                $order->cancel();
+                $order->addStatusHistoryComment(__('Order canceled as user returned to checkout cart without completing iwocaPay.'));
+                $order->addStatusHistoryComment(__('Marked for cancellation in iwocaPay.'));
+                $order->save();
+            } catch (\Exception $e) {
+                $this->logger->error('Error canceling order: ' . $e->getMessage());
+            }
         }
 
         $quoteId = $order->getQuoteId();

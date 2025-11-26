@@ -52,6 +52,17 @@
                     </field>
                 </group>
 
+                <!-- Advanced settings -->
+                <group id="advanced" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Advanced settings</label>
+
+                    <field id="disable_abandoned_cart_cancellations" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Disable Abandoned Cart Cancellations</label>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                        <comment>If enabled, abandoned carts will not be cancelled automatically.</comment>
+                    </field>
+                </group>
+
                 <!--Country specific settings-->
                 <group id="iwoca_country_specific" translate="label" showInDefault="1" showInWebsite="1" showInStore="0" sortOrder="40">
                     <label>Country Specific Settings</label>
