@@ -14,6 +14,7 @@ interface GetOrderInterface
     public const SELLER_NAME = 'seller_name';
     public const STATUS = 'status';
     public const ALLOWED_PAYMENT_TERMS = 'allowed_payment_terms';
+    public const PLUGIN_METADATA = 'meta_data';
 
     /** API status codes */
     public const STATUS_CODE_CREATED = 'CREATED';

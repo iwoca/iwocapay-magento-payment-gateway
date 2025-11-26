@@ -70,6 +70,15 @@ class GetOrder extends DataObject implements GetOrderInterface
     }
 
     /**
+     * @param object $dict
+     * @return GetOrderInterface
+     */
+    public function setPluginMetadata(object $dict): GetOrderInterface
+    {
+        return $this->setData(self::PLUGIN_METADATA, $dict);
+    }
+
+    /**
      * @return string
      */
     public function getRedirectUrl(): string

@@ -83,6 +83,14 @@ class CreateOrderPayload extends DataObject implements CreateOrderPayloadInterfa
     /**
      * @inheritdoc
      */
+    public function setPluginMetadata(array $dict): CreateOrderPayloadInterface
+    {
+        return $this->setData(self::PLUGIN_METADATA, $dict);
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getRedirectUrl(): string
     {
         return (string) $this->getData(self::REDIRECT_URL);

@@ -10,6 +10,7 @@ interface CreateOrderPayloadInterface
     public const ALLOWED_PAYMENT_TERMS ='allowed_payment_terms';
     public const SOURCE ='source';
     public const REDIRECT_URL ='redirect_url';
+    public const PLUGIN_METADATA ='meta_data';
 
     /**
      * @param float $amount
@@ -60,6 +61,12 @@ interface CreateOrderPayloadInterface
      * @return CreateOrderPayloadInterface
      */
     public function setRedirectUrl(string $redirectUrl): CreateOrderPayloadInterface;
+
+    /**
+     * @param array $dict
+     * @return CreateOrderPayloadInterface
+     */
+    public function setPluginMetadata(array $dict): CreateOrderPayloadInterface;
 
     /**
      * @return string
