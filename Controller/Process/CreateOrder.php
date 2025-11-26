@@ -27,6 +27,7 @@ use Magento\Sales\Model\Order;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 
 class CreateOrder implements HttpGetActionInterface
 {
@@ -42,6 +43,7 @@ class CreateOrder implements HttpGetActionInterface
     private CartRepositoryInterface $quoteRepository;
     private StoreManagerInterface $storeManager;
     private LoggerInterface $logger;
+    protected ScopeConfigInterface $scopeConfig;
 
     /**
      * @param ResultFactory $resultFactory
@@ -69,7 +71,8 @@ class CreateOrder implements HttpGetActionInterface
         ManagerInterface                   $messageManager,
         CartRepositoryInterface            $quoteRepository,
         StoreManagerInterface              $storeManager,
-        LoggerInterface                    $logger
+        LoggerInterface                    $logger,
+        ScopeConfigInterface               $scopeConfig
     )
     {
         $this->resultFactory = $resultFactory;
@@ -84,6 +87,7 @@ class CreateOrder implements HttpGetActionInterface
         $this->quoteRepository = $quoteRepository;
         $this->storeManager = $storeManager;
         $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -133,14 +137,52 @@ class CreateOrder implements HttpGetActionInterface
         /**@var CreateOrderPayload $createOrder */
         $createOrder = $this->createOrderPayloadFactory->create();
 
+        $pluginMetadata = [];
+        try {
+            $iwocaSettings = $this->scopeConfig->getValue(
+                'payment/iwocapay',
+                \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+            ) ?? [];
+
+            if (!is_array($iwocaSettings)) {
+                $iwocaSettings = [];
+            }
+
+            $nonSensitiveSettings = $this->recursiveSanitize($iwocaSettings, 'seller_access_token');
+            $pluginMetadata = [
+                "magento_plugin_settings" => $nonSensitiveSettings,
+            ];
+
+        } catch (\Exception $e) {
+            $this->logger->error('iwocaPay metadata error: ' . $e->getMessage());
+        }
 
         $createOrder->setAmount((float)$order->getGrandTotal())
             ->setReference($order->getIncrementId())
             ->setAllowedPaymentTerms($this->config->getAllowedPaymentTermOptions($order->getPayment()->getMethod()))
             ->setSource($this->config->getSource())
-            ->setRedirectUrl($this->getRedirectUrl());
+            ->setRedirectUrl($this->getRedirectUrl())
+            ->setPluginMetadata($pluginMetadata);
 
         return $createOrder;
+    }
+
+    /**
+     * Helper function to recursively remove keys containing a specific string
+     */
+    private function recursiveSanitize(array $data, string $bannedString): array
+    {
+        foreach ($data as $key => $value) {
+            if (strpos($key, $bannedString) !== false) {
+                unset($data[$key]);
+                continue;
+            }
+
+            if (is_array($value)) {
+                $data[$key] = $this->recursiveSanitize($value, $bannedString);
+            }
+        }
+        return $data;
     }
 
     /**

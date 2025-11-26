@@ -16,6 +16,9 @@
                 <redirect_path>iwocapay/process/callback</redirect_path>
                 <allowed_payment_terms><![CDATA[["PAY_LATER", "PAY_NOW"]]]></allowed_payment_terms>
                 <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
+                <advanced>
+                    <disable_abandoned_cart_cancellations>0</disable_abandoned_cart_cancellations>
+                </advanced>
             </iwocapay>
             <iwocapay_paylater>
                 <title>Pay Later with iwocaPay</title>
