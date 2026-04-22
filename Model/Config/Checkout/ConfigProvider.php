@@ -56,7 +56,6 @@ class ConfigProvider implements ConfigProviderInterface
     {
         $configShared = [
             'isActive' => $this->config->isActive(),
-            'sellerAccessToken' => $this->config->getSellerAccessToken(),
             'sellerId' => $this->config->getSellerId(),
             'mode' => $this->config->getMode(),
             'currency' => $this->config->getCurrency(),
