@@ -419,7 +419,7 @@ class Callback implements HttpGetActionInterface
         Redirect $redirect
     ): ?Order {
         // Check if fallback is still active (before 1st May 2026)
-        if (!$this->isFallbackActive()) {
+        if (!$this->isLegacyOrderLookupActive()) {
             $this->messageManager->addErrorMessage(__('Unable to process your payment. Please contact support.'));
             $redirect->setUrl('/checkout/cart');
             return null;
@@ -442,14 +442,14 @@ class Callback implements HttpGetActionInterface
     }
 
     /**
-     * Check if legacy fallback lookup is still active (before 1st May 2026)
+     * Check if legacy fallback lookup is still active (before 2nd June 2026)
      *
      * @return bool
      */
-    private function isFallbackActive(): bool
+    private function isLegacyOrderLookupActive(): bool
     {
         $currentDate = new \DateTime();
-        $cutoffDate = new \DateTime('2026-05-01');
+        $cutoffDate = new \DateTime('2026-06-02');
 
         return $currentDate < $cutoffDate;
     }
