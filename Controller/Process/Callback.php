@@ -418,7 +418,7 @@ class Callback implements HttpGetActionInterface
         GetOrderInterface $orderResponse,
         Redirect $redirect
     ): ?Order {
-        // Check if fallback is still active (before 1st May 2026)
+        // Check if fallback is still active (before 2nd June 2026)
         if (!$this->isLegacyOrderLookupActive()) {
             $this->messageManager->addErrorMessage(__('Unable to process your payment. Please contact support.'));
             $redirect->setUrl('/checkout/cart');
