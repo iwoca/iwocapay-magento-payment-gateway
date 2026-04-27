@@ -114,6 +114,9 @@ class CreateOrder implements HttpGetActionInterface
 
         $redirectUrl = $orderResponse->getOrderUrl();
 
+        // Store iwoca order ID in payment additional information for secure lookup
+        $order->getPayment()->setAdditionalInformation('iwocapay_order_id', $orderResponse->getId());
+
         $order->addCommentToStatusHistory(
             __(
                 'Order with ID "%1" has been created in Iwoca. Redirecting user to %2 to continue payment.',
