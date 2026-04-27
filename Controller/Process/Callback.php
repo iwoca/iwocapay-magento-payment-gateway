@@ -148,9 +148,8 @@ class Callback implements HttpGetActionInterface
         $magentoOrder->addCommentToStatusHistory(__('Iwoca order callback initiated.'));
 
         // Validate order can be updated
-        $validationError = $this->validateOrderForCallback($magentoOrder, $iwocaOrderId);
-        if ($validationError) {
-            return $this->handleFailure($redirect, $magentoOrder, $validationError);
+        if (!$this->isCallbackValid($magentoOrder, $iwocaOrderId)) {
+            return $this->handleFailure($redirect, $magentoOrder, 'Callback validation failed');
         }
 
         $statusCode = $orderResponse->getStatus();
@@ -338,13 +337,10 @@ class Callback implements HttpGetActionInterface
      *
      * @param Order $order
      * @param string $iwocaOrderId
-     * @param GetOrderInterface $orderResponse
-     * @return string|null Returns error message if validation fails, null if valid
+     * @return bool Returns true if valid, false if validation fails
      */
-    private function validateOrderForCallback(
-        Order $order,
-        string $iwocaOrderId,
-    ): ?string {
+    private function isCallbackValid(Order $order, string $iwocaOrderId): bool
+    {
         // Validate payment method is iwocapay
         $paymentMethod = $order->getPayment()->getMethod();
         if (!in_array($paymentMethod, ['iwocapay_paylater', 'iwocapay_paynow'], true)) {
@@ -355,11 +351,11 @@ class Callback implements HttpGetActionInterface
                     $order->getIncrementId()
                 )
             );
-            return 'Invalid payment method';
+            return false;
         }
 
         // Validate stored iwoca order ID matches callback parameter (if stored - new orders only)
-        $storedIwocaOrderId = $order->getPayment()->getAdditionalInformation('iwoca_order_id');
+        $storedIwocaOrderId = $order->getPayment()->getAdditionalInformation('iwocapay_order_id');
         if ($storedIwocaOrderId && $storedIwocaOrderId !== $iwocaOrderId) {
             $this->logger->error(
                 sprintf(
@@ -369,8 +365,10 @@ class Callback implements HttpGetActionInterface
                     $order->getIncrementId()
                 )
             );
-            return 'Order ID mismatch';
+            return false;
         }
+
+        return true;
     }
 
     /**
