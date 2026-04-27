@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Iwoca\Iwocapay\Controller\Process;
@@ -129,7 +130,7 @@ class Callback implements HttpGetActionInterface
 
         try {
             $orderResponse = $this->getIwocaOrderResponse($iwocaOrderId);
-        } catch (GuzzleException|LocalizedException $e) {
+        } catch (GuzzleException | LocalizedException $e) {
             $this->logger->error('iwocaPay callback: Failed to get order response - ' . $e->getMessage());
             return $this->handleFailure($redirect);
         }
@@ -138,17 +139,17 @@ class Callback implements HttpGetActionInterface
         $magentoOrder = $this->findOrderByIwocaOrderId($iwocaOrderId);
 
         // Fallback for legacy orders without stored iwocapay_order_id
-        if (!$magentoOrder || !$magentoOrder->getId()) {
-            $magentoOrder = $this->handleLegacyOrderLookup($iwocaOrderId, $orderResponse, $redirect);
+        $doesOrderContainIwocaOrderReference = !$magentoOrder || !$magentoOrder->getId();
+        if ($doesOrderContainIwocaOrderReference) {
+            $magentoOrder = $this->findOrderWithReference($iwocaOrderId, $orderResponse, $redirect);
             if (!$magentoOrder) {
-                return $redirect;
+                return $redirect->setUrl('/checkout/cart');
             }
         }
 
         $magentoOrder->addCommentToStatusHistory(__('Iwoca order callback initiated.'));
 
-        // Validate order can be updated
-        if (!$this->isCallbackValid($magentoOrder, $iwocaOrderId)) {
+        if (!$this->validateOrderCanBeProcessed($magentoOrder, $iwocaOrderId)) {
             return $this->handleFailure($redirect, $magentoOrder, 'Callback validation failed');
         }
 
@@ -166,9 +167,7 @@ class Callback implements HttpGetActionInterface
 
         $this->handleSuccess($magentoOrder, $orderResponse);
 
-        $redirect->setUrl('/checkout/onepage/success');
-
-        return $redirect;
+        return $redirect->setUrl('/checkout/onepage/success');
     }
 
     /**
@@ -329,7 +328,45 @@ class Callback implements HttpGetActionInterface
             $invoice->setEmailSent(true);
             $this->invoiceSender->send($invoice);
         }
+    }
 
+    private function isPaymentMethodIwocapay(Order $order): bool
+    {
+        $orderId = $order->getIncrementId();
+
+        // Validate payment method is iwocapay
+        $paymentMethod = $order->getPayment()->getMethod();
+        if (!in_array($paymentMethod, ['iwocapay_paylater', 'iwocapay_paynow'], true)) {
+            $this->logger->error(
+                sprintf(
+                    'iwocaPay callback: Invalid payment method %s for order %s',
+                    $paymentMethod,
+                    $orderId,
+                )
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isOrderIwocaIdMatchingCallbackParamId(Order $order, string $callbackIwocaOrderId): bool
+    {
+        // Validate stored iwoca order ID matches callback parameter (if stored - new orders only)
+        $storedIwocaOrderId = $order->getPayment()->getAdditionalInformation('iwocapay_order_id');
+        if ($storedIwocaOrderId && $storedIwocaOrderId !== $callbackIwocaOrderId) {
+            $this->logger->error(
+                sprintf(
+                    'iwocaPay callback: Stored iwoca order ID %s does not match callback parameter %s for order %s',
+                    $storedIwocaOrderId,
+                    $callbackIwocaOrderId,
+                    $order->getIncrementId()
+                )
+            );
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -339,36 +376,13 @@ class Callback implements HttpGetActionInterface
      * @param string $iwocaOrderId
      * @return bool Returns true if valid, false if validation fails
      */
-    private function isCallbackValid(Order $order, string $iwocaOrderId): bool
+    private function validateOrderCanBeProcessed(Order $order, string $iwocaOrderId): bool
     {
-        // Validate payment method is iwocapay
-        $paymentMethod = $order->getPayment()->getMethod();
-        if (!in_array($paymentMethod, ['iwocapay_paylater', 'iwocapay_paynow'], true)) {
-            $this->logger->error(
-                sprintf(
-                    'iwocaPay callback: Invalid payment method %s for order %s',
-                    $paymentMethod,
-                    $order->getIncrementId()
-                )
-            );
-            return false;
+        if ($this->isPaymentMethodIwocapay($order) && $this->isOrderIwocaIdMatchingCallbackParamId($order, $iwocaOrderId)) {
+            return true;
         }
 
-        // Validate stored iwoca order ID matches callback parameter (if stored - new orders only)
-        $storedIwocaOrderId = $order->getPayment()->getAdditionalInformation('iwocapay_order_id');
-        if ($storedIwocaOrderId && $storedIwocaOrderId !== $iwocaOrderId) {
-            $this->logger->error(
-                sprintf(
-                    'iwocaPay callback: Stored iwoca order ID %s does not match callback parameter %s for order %s',
-                    $storedIwocaOrderId,
-                    $iwocaOrderId,
-                    $order->getIncrementId()
-                )
-            );
-            return false;
-        }
-
-        return true;
+        return false;
     }
 
     /**
@@ -410,18 +424,15 @@ class Callback implements HttpGetActionInterface
      *
      * @param string $iwocaOrderId
      * @param GetOrderInterface $orderResponse
-     * @param Redirect $redirect
      * @return Order|null Returns null if fallback is not active or order not found
      */
-    private function handleLegacyOrderLookup(
+    private function findOrderWithReference(
         string $iwocaOrderId,
         GetOrderInterface $orderResponse,
-        Redirect $redirect
     ): ?Order {
         // Check if fallback is still active (before 2nd June 2026)
-        if (!$this->isLegacyOrderLookupActive()) {
+        if (!isLegacyOrderLookupActive()) {
             $this->messageManager->addErrorMessage(__('Unable to process your payment. Please contact support.'));
-            $redirect->setUrl('/checkout/cart');
             return null;
         }
 
@@ -434,24 +445,10 @@ class Callback implements HttpGetActionInterface
                 sprintf('iwocaPay callback: Order not found by either method for iwoca order ID %s', $iwocaOrderId)
             );
             $this->messageManager->addErrorMessage(__('Unable to find your order. Please contact support.'));
-            $redirect->setUrl('/checkout/cart');
             return null;
         }
 
         return $magentoOrder;
-    }
-
-    /**
-     * Check if legacy fallback lookup is still active (before 2nd June 2026)
-     *
-     * @return bool
-     */
-    private function isLegacyOrderLookupActive(): bool
-    {
-        $currentDate = new \DateTime();
-        $cutoffDate = new \DateTime('2026-06-02');
-
-        return $currentDate < $cutoffDate;
     }
 
     /**
