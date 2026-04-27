@@ -8,6 +8,7 @@ use Iwoca\Iwocapay\Model\Config\Source\Mode;
 use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
 use Magento\Directory\Model\Currency;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Payment\Gateway\Config\Config as GatewayConfig;
@@ -55,16 +56,24 @@ class Config
     private Json $jsonSerializer;
 
     /**
+     * @var EncryptorInterface
+     */
+    private EncryptorInterface $encryptor;
+
+    /**
      * @param ScopeConfigInterface $scopeConfig
      * @param Json $jsonSerializer
+     * @param EncryptorInterface $encryptor
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        Json                 $jsonSerializer
+        Json                 $jsonSerializer,
+        EncryptorInterface   $encryptor
     )
     {
         $this->scopeConfig = $scopeConfig;
         $this->jsonSerializer = $jsonSerializer;
+        $this->encryptor = $encryptor;
     }
 
     /**
@@ -94,7 +103,8 @@ class Config
      */
     public function getSellerAccessToken(): string
     {
-        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
+        $encryptedValue = (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
+        return $encryptedValue ? $this->encryptor->decrypt($encryptedValue) : '';
     }
 
     /**
