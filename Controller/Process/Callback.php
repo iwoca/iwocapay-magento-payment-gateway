@@ -420,13 +420,10 @@ class Callback implements HttpGetActionInterface
     ): ?Order {
         // Check if fallback is still active (before 1st May 2026)
         if (!$this->isFallbackActive()) {
-            // TODO: Add logging for fallback period expired
             $this->messageManager->addErrorMessage(__('Unable to process your payment. Please contact support.'));
             $redirect->setUrl('/checkout/cart');
             return null;
         }
-
-        // TODO: Add logging for using legacy fallback lookup
 
         // Attempt legacy lookup by increment_id
         $magentoOrder = $this->orderFactory->create();
