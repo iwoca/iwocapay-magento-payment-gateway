@@ -15,6 +15,10 @@
                   <label>Sort Order</label>
                   <frontend_class>validate-number</frontend_class>
                 </field>
+                <field id="version" translate="label" type="label" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Plugin Version</label>
+                    <comment><![CDATA[2.0.0]]></comment>
+                </field>
                 <!-- Required Settings -->
                 <group id="iwocapay_required" translate="label" showInDefault="1" showInWebsite="1" showInStore="1" sortOrder="10">
                     <label>Required Settings</label>
