@@ -401,10 +401,6 @@ class Callback implements HttpGetActionInterface
      */
     private function addDebugLog(string $logMessage): void
     {
-        if (!$this->config->isDebugModeEnabled()) {
-            return;
-        }
-
         $this->logger->debug($logMessage);
     }
 }
