@@ -60,7 +60,6 @@ class IwocaClientFactory
                 'Cache-Control' => 'nocache',
                 'Content-Type' => 'application/json',
                 'Authorization' => sprintf('Bearer %s', $this->config->getSellerAccessToken()),
-                'iwocapay-integration-version' => '2.0.0'
             ],
         ];
 
