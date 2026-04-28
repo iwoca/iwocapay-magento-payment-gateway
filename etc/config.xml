@@ -8,9 +8,10 @@
                 <title>iwocaPay</title>
                 <prod_base_url>https://www.iwoca.co.uk</prod_base_url>
                 <staging_base_url>https://stage.iwoca-dev.co.uk</staging_base_url>
-                <api_base_path>/api/lending/edge/</api_base_path>
-                <api_path_create_order><![CDATA[/ecommerce/seller/:sellerId/order]]></api_path_create_order>
-                <api_path_get_order><![CDATA[/ecommerce/order/:orderId]]></api_path_get_order>
+                <api_base_path_lending>/api/lending/edge/</api_base_path_lending>
+                <api_base_path_iwocapay>/api/iwocapay/</api_base_path_iwocapay>
+                <api_path_create_order><![CDATA[/ecommerce/seller/:sellerId/order/]]></api_path_create_order>
+                <api_path_get_order><![CDATA[/ecommerce/seller/:sellerId/order/:orderId/]]></api_path_get_order>
                 <can_use_checkout>1</can_use_checkout>
                 <source>iwocaPay_magento_extension</source>
                 <redirect_path>iwocapay/process/callback</redirect_path>

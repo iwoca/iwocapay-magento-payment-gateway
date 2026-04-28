@@ -6,9 +6,7 @@ namespace Iwoca\Iwocapay\Controller\Process;
 
 use GuzzleHttp\Exception\GuzzleException;
 use Iwoca\Iwocapay\Api\Response\GetOrderInterface;
-use Iwoca\Iwocapay\Api\Response\GetOrderInterfaceFactory;
-use Iwoca\Iwocapay\Model\Config;
-use Iwoca\Iwocapay\Model\IwocaClientFactory;
+use Iwoca\Iwocapay\Model\IwocaApiClient;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
@@ -38,10 +36,7 @@ class Callback implements HttpGetActionInterface
 
     private Context $context;
     private ResultFactory $resultFactory;
-    private Config $config;
-    private IwocaClientFactory $iwocaClientFactory;
-    private Json $jsonSerializer;
-    private GetOrderInterfaceFactory $getOrderFactory;
+    private IwocaApiClient $iwocaApiClient;
     private Session $checkoutSession;
     private OrderFactory $orderFactory;
     private OrderRepositoryInterface $orderRepository;
@@ -58,10 +53,7 @@ class Callback implements HttpGetActionInterface
     /**
      * @param Context $context
      * @param ResultFactory $resultFactory
-     * @param Config $config
-     * @param IwocaClientFactory $iwocaClientFactory
-     * @param Json $jsonSerializer
-     * @param GetOrderInterfaceFactory $getOrderFactory
+     * @param IwocaApiClient $iwocaApiClient
      * @param Session $checkoutSession
      * @param OrderFactory $orderFactory
      * @param OrderRepositoryInterface $orderRepository
@@ -69,16 +61,16 @@ class Callback implements HttpGetActionInterface
      * @param CartRepositoryInterface $quoteRepository
      * @param InvoiceService $invoiceService
      * @param InvoiceRepositoryInterface $invoiceRepository
+     * @param InvoiceSender $invoiceSender
      * @param OrderSender $orderSender
      * @param LoggerInterface $logger
+     * @param ScopeConfigInterface $scopeConfig
+     * @param PaymentCollectionFactory $paymentCollectionFactory
      */
     public function __construct(
         Context $context,
         ResultFactory $resultFactory,
-        Config $config,
-        IwocaClientFactory $iwocaClientFactory,
-        Json $jsonSerializer,
-        GetOrderInterfaceFactory $getOrderFactory,
+        IwocaApiClient $iwocaApiClient,
         Session $checkoutSession,
         OrderFactory $orderFactory,
         OrderRepositoryInterface $orderRepository,
@@ -94,10 +86,7 @@ class Callback implements HttpGetActionInterface
     ) {
         $this->context = $context;
         $this->resultFactory = $resultFactory;
-        $this->config = $config;
-        $this->iwocaClientFactory = $iwocaClientFactory;
-        $this->jsonSerializer = $jsonSerializer;
-        $this->getOrderFactory = $getOrderFactory;
+        $this->iwocaApiClient = $iwocaApiClient;
         $this->checkoutSession = $checkoutSession;
         $this->orderFactory = $orderFactory;
         $this->orderRepository = $orderRepository;
@@ -129,7 +118,7 @@ class Callback implements HttpGetActionInterface
         }
 
         try {
-            $orderResponse = $this->getIwocaOrderResponse($iwocaOrderId);
+            $orderResponse = $this->iwocaApiClient->getOrder($iwocaOrderId);
         } catch (GuzzleException | LocalizedException $e) {
             $this->logger->error('iwocaPay callback: Failed to get order response - ' . $e->getMessage());
             return $this->handleFailure($redirect);
@@ -168,51 +157,6 @@ class Callback implements HttpGetActionInterface
         $this->handleSuccess($magentoOrder, $orderResponse);
 
         return $redirect->setUrl('/checkout/onepage/success');
-    }
-
-    /**
-     * @param string $iwocaOrderId
-     * @return GetOrderInterface
-     * @throws GuzzleException
-     * @throws LocalizedException
-     */
-    private function getIwocaOrderResponse(string $iwocaOrderId): GetOrderInterface
-    {
-        $iwocaClient = $this->iwocaClientFactory->create();
-        try {
-            $rawResponse = $iwocaClient->get(
-                $this->config->getApiEndpoint(
-                    Config::CONFIG_TYPE_GET_ORDER_ENDPOINT,
-                    [':' . self::IWOCA_ORDER_ID_PARAM => $iwocaOrderId]
-                )
-            );
-        } catch (GuzzleException $e) {
-            $this->addDebugLog(
-                sprintf(
-                    'Error occurred while retrieving Iwoca order response for order with Iwoca ID %s. Received exception %s',
-                    $iwocaOrderId,
-                    $e->getMessage()
-                )
-            );
-            throw $e;
-        } catch (LocalizedException $e) {
-            $this->addDebugLog(
-                sprintf(
-                    'Error occurred while getting API endpoint of type "%s". Exception: %s',
-                    Config::CONFIG_TYPE_GET_ORDER_ENDPOINT,
-                    $e->getMessage()
-                )
-            );
-            throw $e;
-        }
-
-        $responseJson = $rawResponse->getBody()->getContents();
-        $responseData = $this->jsonSerializer->unserialize($responseJson);
-
-        $orderResponse = $this->getOrderFactory->create();
-        $orderResponse->setData($responseData['data']);
-
-        return $orderResponse;
     }
 
     /**
@@ -457,10 +401,6 @@ class Callback implements HttpGetActionInterface
      */
     private function addDebugLog(string $logMessage): void
     {
-        if (!$this->config->isDebugModeEnabled()) {
-            return;
-        }
-
         $this->logger->debug($logMessage);
     }
 }

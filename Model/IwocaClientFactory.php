@@ -5,6 +5,7 @@ namespace Iwoca\Iwocapay\Model;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientFactory as GuzzleClientFactory;
+use Psr\Log\LoggerInterface;
 
 class IwocaClientFactory
 {
@@ -20,33 +21,55 @@ class IwocaClientFactory
     private Config $config;
 
     /**
+     * @var Hmac
+     */
+    private Hmac $hmac;
+
+    /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
      * @param GuzzleClientFactory $guzzleClientFactory
      * @param Config $config
+     * @param Hmac $hmac
+     * @param LoggerInterface $logger
      */
     public function __construct(
         GuzzleClientFactory $guzzleClientFactory,
-        Config $config
+        Config $config,
+        Hmac $hmac,
+        LoggerInterface $logger
     ) {
         $this->guzzleClientFactory = $guzzleClientFactory;
         $this->config = $config;
+        $this->hmac = $hmac;
+        $this->logger = $logger;
     }
 
     /**
-     * @return GuzzleClient
+     * Create IwocaClient with automatic HMAC verification
+     *
+     * @return IwocaClient
      */
-    public function create(): GuzzleClient
+    public function create(): IwocaClient
     {
-        $this->config->getApiBaseUrl();
-
         $config = [
-            'base_uri' => rtrim($this->config->getApiBaseUrl(), '/') . '/',
             'headers' => [
                 'Cache-Control' => 'nocache',
                 'Content-Type' => 'application/json',
-                'Authorization' => sprintf('Bearer %s', $this->config->getSellerAccessToken())
+                'Authorization' => sprintf('Bearer %s', $this->config->getSellerAccessToken()),
             ],
         ];
 
-        return $this->guzzleClientFactory->create(['config' => $config]);
+        $guzzleClient = $this->guzzleClientFactory->create(['config' => $config]);
+
+        return new IwocaClient(
+            $guzzleClient,
+            $this->hmac,
+            $this->config->getSellerAccessToken(),
+            $this->logger
+        );
     }
 }
