@@ -2,19 +2,12 @@
     "name": "iwoca/iwocapay-magento",
     "description": "Implementation of the iwocaPay payment service for your Magento store",
     "type": "magento2-module",
+    "version": "2.0.0",
     "license": "MIT",
     "authors": [
         {
-            "name": "Martijn Swinkels",
-            "email": "martiniswink@gmail.com"
-        },
-        {
-            "name": "Sebastian Rother",
-            "email": "s.rother@iwoca.de"
-        },
-        {
-            "name": "Joe McAlister",
-            "email": "j.mcalister@iwoca.co.uk"
+            "name": "iwocaPay tech",
+            "email": "iwocapay_tech_team@iwoca.co.uk"
         }
     ],
     "require": {
