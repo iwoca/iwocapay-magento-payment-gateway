@@ -24,8 +24,9 @@
                     <label>Required Settings</label>
                     <attribute type="expanded">1</attribute>
                     <frontend_model>Magento\Config\Block\System\Config\Form\Fieldset</frontend_model>
-                    <field id="seller_access_token" translate="label tooltip" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <field id="seller_access_token" translate="label tooltip" type="obscure" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
                         <label>Seller Access Token</label>
+                        <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                         <config_path>payment/iwocapay/seller_access_token</config_path>
                         <tooltip>This is the token that is used to authenticate any request made to Iwocapay. For access to your seller access token, please contact your account manager.</tooltip>
                     </field>

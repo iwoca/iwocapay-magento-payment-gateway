@@ -8,6 +8,7 @@ use Iwoca\Iwocapay\Model\Config\Source\Mode;
 use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
 use Magento\Directory\Model\Currency;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Payment\Gateway\Config\Config as GatewayConfig;
@@ -33,7 +34,8 @@ class Config
     public const XML_CONFIG_PATH_ALLOWED_CURRENCIES = 'payment/iwocapay/allowed_currencies';
     public const XML_CONFIG_PATH_STAGING_BASE_URL = 'payment/iwocapay/staging_base_url';
     public const XML_CONFIG_PATH_PROD_BASE_URL = 'payment/iwocapay/prod_base_url';
-    public const XML_CONFIG_PATH_API_BASE_PATH = 'payment/iwocapay/api_base_path';
+    public const XML_CONFIG_PATH_API_BASE_PATH_LENDING = 'payment/iwocapay/api_base_path_lending';
+    public const XML_CONFIG_PATH_API_BASE_PATH_IWOCAPAY = 'payment/iwocapay/api_base_path_iwocapay';
     public const XML_CONFIG_PATH_API_PATH_CREATE_ORDER = 'payment/iwocapay/api_path_create_order';
     public const XML_CONFIG_PATH_API_PATH_GET_ORDER = 'payment/iwocapay/api_path_get_order';
 
@@ -42,6 +44,10 @@ class Config
     public const ENDPOINT_CONFIG_MAPPING = [
         self::CONFIG_TYPE_CREATE_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_CREATE_ORDER,
         self::CONFIG_TYPE_GET_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_GET_ORDER
+    ];
+    public const ENDPOINT_BASE_PATH_MAPPING = [
+        self::CONFIG_TYPE_CREATE_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_BASE_PATH_LENDING,
+        self::CONFIG_TYPE_GET_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_BASE_PATH_IWOCAPAY
     ];
 
     /**
@@ -55,16 +61,24 @@ class Config
     private Json $jsonSerializer;
 
     /**
+     * @var EncryptorInterface
+     */
+    private EncryptorInterface $encryptor;
+
+    /**
      * @param ScopeConfigInterface $scopeConfig
      * @param Json $jsonSerializer
+     * @param EncryptorInterface $encryptor
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        Json                 $jsonSerializer
+        Json                 $jsonSerializer,
+        EncryptorInterface   $encryptor
     )
     {
         $this->scopeConfig = $scopeConfig;
         $this->jsonSerializer = $jsonSerializer;
+        $this->encryptor = $encryptor;
     }
 
     /**
@@ -94,7 +108,8 @@ class Config
      */
     public function getSellerAccessToken(): string
     {
-        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
+        $encryptedValue = (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
+        return $encryptedValue ? $this->encryptor->decrypt($encryptedValue) : '';
     }
 
     /**
@@ -253,20 +268,23 @@ class Config
     }
 
     /**
+     * @param string $endpointType
      * @return string
      */
-    public function getApiBasePath(): string
+    public function getApiBasePath(string $endpointType): string
     {
-        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_API_BASE_PATH);
+        $basePathConfig = self::ENDPOINT_BASE_PATH_MAPPING[$endpointType] ?? self::XML_CONFIG_PATH_API_BASE_PATH_LENDING;
+        return (string)$this->scopeConfig->getValue($basePathConfig);
     }
 
     /**
+     * @param string $endpointType
      * @return string
      */
-    public function getApiBaseUrl(): string
+    public function getApiBaseUrl(string $endpointType): string
     {
         $baseUrl = rtrim($this->getBaseUrl(), '/');
-        $basePath = trim($this->getApiBasePath(), '/');
+        $basePath = trim($this->getApiBasePath($endpointType), '/');
         return $baseUrl . '/' . $basePath;
     }
 
@@ -286,8 +304,8 @@ class Config
 
         $apiPath = trim((string)$this->scopeConfig->getValue(self::ENDPOINT_CONFIG_MAPPING[$type]), '/');
         $matches = [];
-        if (preg_match('~(\:\w+)~', $apiPath, $matches)) {
-            $matches = array_unique($matches);
+        if (preg_match_all('~(\:\w+)~', $apiPath, $matches)) {
+            $matches = array_unique($matches[1]);
             foreach ($matches as $match) {
                 if (isset($replacementData[$match])) {
                     $apiPath = str_replace($match, $replacementData[$match], $apiPath);
@@ -295,7 +313,7 @@ class Config
             }
         }
 
-        return $this->getApiBaseUrl() . '/' . $apiPath . '/';
+        return $this->getApiBaseUrl($type) . '/' . $apiPath . '/';
     }
 
     /**
