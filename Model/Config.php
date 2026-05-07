@@ -108,7 +108,7 @@ class Config
      */
     public function getSellerAccessToken(): string
     {
-        $encryptedValue = (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeInterface::SCOPE_WEBSITE);
+        $encryptedValue = (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ACCESS_TOKEN, ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
         return $encryptedValue ? $this->encryptor->decrypt($encryptedValue) : '';
     }
 
@@ -117,7 +117,7 @@ class Config
      */
     public function getSellerId(): string
     {
-        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ID, ScopeInterface::SCOPE_WEBSITE);
+        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_SELLER_ID, ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
     }
 
 
