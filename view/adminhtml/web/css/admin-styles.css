@@ -1,0 +1,12 @@
+.iwoca-iwocapay-fieldset > fieldset > table:before {
+    content: "";
+    background-image: url('../images/iwocapay.png');
+    width: 150px;
+    height: 33px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    display: block;
+    position: absolute;
+    margin-left: 30px;
+    margin-top: 15px;
+}

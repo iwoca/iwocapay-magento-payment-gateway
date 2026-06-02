@@ -1,0 +1,12 @@
+# 1.0.0 (2026-06-02)
+
+
+### Bug Fixes
+
+* also cancel order in iwocaPay database ([c7a1dc5](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/c7a1dc51055ec63f16689da6373da42407730855))
+* prevent empty cart after iwocapay checkout ([98764be](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/98764beb51cb6ad8a7ba0715f9e889b04cc8ad4c))
+
+
+### Features
+
+* add sorting order ([cf948d3](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/cf948d36cabd3120622ae882a6ef3408229f0dae))

@@ -1,0 +1,406 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Iwoca\Iwocapay\Controller\Process;
+
+use GuzzleHttp\Exception\GuzzleException;
+use Iwoca\Iwocapay\Api\Response\GetOrderInterface;
+use Iwoca\Iwocapay\Model\IwocaApiClient;
+use Magento\Checkout\Model\Session;
+use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\Action\HttpGetActionInterface;
+use Magento\Framework\Controller\Result\Redirect;
+use Magento\Framework\Controller\ResultFactory;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Message\ManagerInterface;
+use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\InvoiceRepositoryInterface;
+use Magento\Sales\Model\Order\Email\Sender\InvoiceSender;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Email\Sender\OrderSender;
+use Magento\Sales\Model\Order\Invoice;
+use Magento\Sales\Model\OrderFactory;
+use Magento\Sales\Model\Service\InvoiceService;
+use Psr\Log\LoggerInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Sales\Model\ResourceModel\Order\Payment\CollectionFactory as PaymentCollectionFactory;
+
+class Callback implements HttpGetActionInterface
+{
+    public const IWOCA_ORDER_ID_PARAM = 'orderId';
+
+    private Context $context;
+    private ResultFactory $resultFactory;
+    private IwocaApiClient $iwocaApiClient;
+    private Session $checkoutSession;
+    private OrderFactory $orderFactory;
+    private OrderRepositoryInterface $orderRepository;
+    private ManagerInterface $messageManager;
+    private CartRepositoryInterface $quoteRepository;
+    private InvoiceService $invoiceService;
+    private InvoiceRepositoryInterface $invoiceRepository;
+    private InvoiceSender $invoiceSender;
+    private OrderSender $orderSender;
+    private LoggerInterface $logger;
+    private ScopeConfigInterface $scopeConfig;
+    private PaymentCollectionFactory $paymentCollectionFactory;
+
+    /**
+     * @param Context $context
+     * @param ResultFactory $resultFactory
+     * @param IwocaApiClient $iwocaApiClient
+     * @param Session $checkoutSession
+     * @param OrderFactory $orderFactory
+     * @param OrderRepositoryInterface $orderRepository
+     * @param ManagerInterface $messageManager
+     * @param CartRepositoryInterface $quoteRepository
+     * @param InvoiceService $invoiceService
+     * @param InvoiceRepositoryInterface $invoiceRepository
+     * @param InvoiceSender $invoiceSender
+     * @param OrderSender $orderSender
+     * @param LoggerInterface $logger
+     * @param ScopeConfigInterface $scopeConfig
+     * @param PaymentCollectionFactory $paymentCollectionFactory
+     */
+    public function __construct(
+        Context $context,
+        ResultFactory $resultFactory,
+        IwocaApiClient $iwocaApiClient,
+        Session $checkoutSession,
+        OrderFactory $orderFactory,
+        OrderRepositoryInterface $orderRepository,
+        ManagerInterface $messageManager,
+        CartRepositoryInterface $quoteRepository,
+        InvoiceService $invoiceService,
+        InvoiceRepositoryInterface $invoiceRepository,
+        InvoiceSender $invoiceSender,
+        OrderSender $orderSender,
+        LoggerInterface $logger,
+        ScopeConfigInterface $scopeConfig,
+        PaymentCollectionFactory $paymentCollectionFactory
+    ) {
+        $this->context = $context;
+        $this->resultFactory = $resultFactory;
+        $this->iwocaApiClient = $iwocaApiClient;
+        $this->checkoutSession = $checkoutSession;
+        $this->orderFactory = $orderFactory;
+        $this->orderRepository = $orderRepository;
+        $this->messageManager = $messageManager;
+        $this->quoteRepository = $quoteRepository;
+        $this->invoiceService = $invoiceService;
+        $this->invoiceRepository = $invoiceRepository;
+        $this->invoiceSender = $invoiceSender;
+        $this->orderSender = $orderSender;
+        $this->logger = $logger;
+        $this->scopeConfig = $scopeConfig;
+        $this->paymentCollectionFactory = $paymentCollectionFactory;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws LocalizedException
+     */
+    public function execute()
+    {
+        $iwocaOrderId = $this->context->getRequest()->getParam(self::IWOCA_ORDER_ID_PARAM);
+
+        /** @var Redirect $redirect */
+        $redirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+
+        if (!$iwocaOrderId) {
+            $this->logger->error('iwocaPay callback: Missing orderId parameter');
+            return $this->handleFailure($redirect);
+        }
+
+        try {
+            $orderResponse = $this->iwocaApiClient->getOrder($iwocaOrderId);
+        } catch (GuzzleException | LocalizedException $e) {
+            $this->logger->error('iwocaPay callback: Failed to get order response - ' . $e->getMessage());
+            return $this->handleFailure($redirect);
+        }
+
+        // Look up order by iwoca order ID stored in payment additional information
+        $magentoOrder = $this->findOrderByIwocaOrderId($iwocaOrderId);
+
+        // Fallback for legacy orders without stored iwocapay_order_id
+        $doesOrderContainIwocaOrderReference = !$magentoOrder || !$magentoOrder->getId();
+        if ($doesOrderContainIwocaOrderReference) {
+            $magentoOrder = $this->findOrderWithReference($iwocaOrderId, $orderResponse, $redirect);
+            if (!$magentoOrder) {
+                return $redirect->setUrl('/checkout/cart');
+            }
+        }
+
+        $magentoOrder->addCommentToStatusHistory(__('Iwoca order callback initiated.'));
+
+        if (!$this->validateOrderCanBeProcessed($magentoOrder, $iwocaOrderId)) {
+            return $this->handleFailure($redirect, $magentoOrder, 'Callback validation failed');
+        }
+
+        $statusCode = $orderResponse->getStatus();
+        if ($statusCode !== GetOrderInterface::STATUS_CODE_SUCCESSFUL) {
+            $this->addDebugLog(
+                sprintf(
+                    'Received status %s for order with increment ID %s',
+                    $statusCode,
+                    $magentoOrder->getIncrementId()
+                )
+            );
+            return $this->handleFailure($redirect, $magentoOrder, $statusCode);
+        }
+
+        $this->handleSuccess($magentoOrder, $orderResponse);
+
+        return $redirect->setUrl('/checkout/onepage/success');
+    }
+
+    /**
+     * @param Redirect $redirect
+     * @param OrderInterface|null $order
+     * @param string|null $statusCode
+     * @return Redirect
+     * @throws NoSuchEntityException
+     */
+    private function handleFailure(Redirect $redirect, ?OrderInterface $order = null, ?string $statusCode = null): Redirect
+    {
+        if ($order) {
+            $order->addCommentToStatusHistory(
+                __(
+                    'Received status code %1. Canceling order, recreating quote and redirecting user to cart to retry',
+                    $statusCode
+                )
+            );
+
+            $order->setState(Order::STATE_CANCELED);
+            $order->setStatus(Order::STATE_CANCELED);
+
+            $this->orderRepository->save($order);
+
+            $this->activateQuoteFromOrder($order);
+        }
+
+        $this->messageManager->addErrorMessage(__('Something went wrong while placing your order.'));
+        $redirect->setUrl('/checkout/cart');
+
+        return $redirect;
+    }
+
+    /**
+     * @param OrderInterface $order
+     * @return void
+     * @throws NoSuchEntityException
+     */
+    private function activateQuoteFromOrder(OrderInterface $order): void
+    {
+        $quoteId = $order->getQuoteId();
+
+        $quote = $this->quoteRepository->get($quoteId);
+        $quote->setIsActive(1);
+        $this->quoteRepository->save($quote);
+
+        $this->checkoutSession->setQuoteId($quoteId);
+    }
+
+    private function setCheckoutSessionOrderData(Order $order): void
+    {
+        $this->checkoutSession->setLastSuccessQuoteId($order->getQuoteId());
+        $this->checkoutSession->setLastQuoteId($order->getQuoteId());
+        $this->checkoutSession->setLastOrderId($order->getId());
+        $this->checkoutSession->setLastRealOrderId($order->getRealOrderId());
+    }
+
+    /**
+     * @param Order $order
+     * @param GetOrderInterface $orderResponse
+     * @return void
+     * @throws LocalizedException
+     */
+    private function handleSuccess(Order $order, GetOrderInterface $orderResponse): void
+    {
+        if ($order->getState() === Order::STATE_PROCESSING || $order->hasInvoices()) {
+            $this->logger->info("iwocaPay handleSuccess: Order {$order->getId()} already processed.");
+            $this->setCheckoutSessionOrderData($order);
+            return;
+        }
+
+        $this->createOrderInvoice($order, $orderResponse);
+        $this->setCheckoutSessionOrderData($order);
+
+        $order->addCommentToStatusHistory(__(
+            'Iwoca payment with amount "%1" was successful. Redirecting customer to success page.',
+            $orderResponse->getAmount()
+        ));
+
+        $order->setState(Order::STATE_PROCESSING);
+        $order->setStatus(Order::STATE_PROCESSING);
+        $order->setCanSendNewEmailFlag(true);
+        $this->orderSender->send($order);
+        $this->orderRepository->save($order);
+    }
+
+    /**
+     * @param Order $order
+     * @param GetOrderInterface $orderResponse
+     * @return void
+     * @throws LocalizedException
+     */
+    private function createOrderInvoice(Order $order, GetOrderInterface $orderResponse): void
+    {
+        if (!$order->canInvoice()) {
+            $order->addCommentToStatusHistory(__('Order cannot be invoiced'));
+            throw new LocalizedException(__('Order cannot be invoiced'));
+        }
+
+        $invoice = $this->invoiceService->prepareInvoice($order);
+        $invoice->setRequestedCaptureCase(Invoice::CAPTURE_ONLINE);
+        $invoice->setTransactionId($orderResponse->getPayLinkId());
+        $invoice->register();
+        $this->invoiceRepository->save($invoice);
+
+        $sendInvoiceEmails = $this->scopeConfig->isSetFlag(
+            'payment/iwocapay/send_invoice_emails',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $order->getStoreId()
+        );
+
+        if ($sendInvoiceEmails) {
+            $invoice->setEmailSent(true);
+            $this->invoiceSender->send($invoice);
+        }
+    }
+
+    private function isPaymentMethodIwocapay(Order $order): bool
+    {
+        $orderId = $order->getIncrementId();
+
+        // Validate payment method is iwocapay
+        $paymentMethod = $order->getPayment()->getMethod();
+        if (!in_array($paymentMethod, ['iwocapay_paylater', 'iwocapay_paynow'], true)) {
+            $this->logger->error(
+                sprintf(
+                    'iwocaPay callback: Invalid payment method %s for order %s',
+                    $paymentMethod,
+                    $orderId,
+                )
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isOrderIwocaIdMatchingCallbackParamId(Order $order, string $callbackIwocaOrderId): bool
+    {
+        // Validate stored iwoca order ID matches callback parameter (if stored - new orders only)
+        $storedIwocaOrderId = $order->getPayment()->getAdditionalInformation('iwocapay_order_id');
+        if ($storedIwocaOrderId && $storedIwocaOrderId !== $callbackIwocaOrderId) {
+            $this->logger->error(
+                sprintf(
+                    'iwocaPay callback: Stored iwoca order ID %s does not match callback parameter %s for order %s',
+                    $storedIwocaOrderId,
+                    $callbackIwocaOrderId,
+                    $order->getIncrementId()
+                )
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate that the order can be updated with callback data
+     *
+     * @param Order $order
+     * @param string $iwocaOrderId
+     * @return bool Returns true if valid, false if validation fails
+     */
+    private function validateOrderCanBeProcessed(Order $order, string $iwocaOrderId): bool
+    {
+        if ($this->isPaymentMethodIwocapay($order) && $this->isOrderIwocaIdMatchingCallbackParamId($order, $iwocaOrderId)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Find order by iwoca order ID stored in payment additional information
+     *
+     * @param string $iwocaOrderId
+     * @return Order|null
+     */
+    private function findOrderByIwocaOrderId(string $iwocaOrderId): ?Order
+    {
+        $paymentCollection = $this->paymentCollectionFactory->create();
+        $paymentCollection->addFieldToFilter('additional_information', ['like' => '%' . $this->escapeForLike($iwocaOrderId) . '%']);
+
+        foreach ($paymentCollection as $payment) {
+            $additionalInfo = $payment->getAdditionalInformation();
+            if (isset($additionalInfo['iwocapay_order_id']) && $additionalInfo['iwocapay_order_id'] === $iwocaOrderId) {
+                $order = $this->orderFactory->create();
+                $order->load($payment->getParentId());
+                return $order;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Escape special characters for LIKE query
+     *
+     * @param string $value
+     * @return string
+     */
+    private function escapeForLike(string $value): string
+    {
+        return addcslashes($value, '%_\\');
+    }
+
+    /**
+     * Handle legacy order lookup for orders created before iwoca_order_id was stored
+     *
+     * @param string $iwocaOrderId
+     * @param GetOrderInterface $orderResponse
+     * @return Order|null Returns null if fallback is not active or order not found
+     */
+    private function findOrderWithReference(
+        string $iwocaOrderId,
+        GetOrderInterface $orderResponse,
+    ): ?Order {
+        // Check if fallback is still active (before 2nd June 2026)
+        if (!isLegacyOrderLookupActive()) {
+            $this->messageManager->addErrorMessage(__('Unable to process your payment. Please contact support.'));
+            return null;
+        }
+
+        // Attempt legacy lookup by increment_id
+        $magentoOrder = $this->orderFactory->create();
+        $magentoOrder->loadByIncrementId($orderResponse->getReference());
+
+        if (!$magentoOrder->getId()) {
+            $this->logger->error(
+                sprintf('iwocaPay callback: Order not found by either method for iwoca order ID %s', $iwocaOrderId)
+            );
+            $this->messageManager->addErrorMessage(__('Unable to find your order. Please contact support.'));
+            return null;
+        }
+
+        return $magentoOrder;
+    }
+
+    /**
+     * @param string $logMessage
+     * @return void
+     */
+    private function addDebugLog(string $logMessage): void
+    {
+        $this->logger->debug($logMessage);
+    }
+}
