@@ -1,0 +1,76 @@
+<script defer src="https://iwocapay-static.iwoca.com/sdk/sdk.iife.js"></script>
+<script>
+(function() {
+    function hydrateBanners() {
+        document.querySelectorAll('iwocapay-banner[data-banner-type]').forEach(function(wrapper) {
+            if (wrapper.dataset.hydrated) return;
+            wrapper.dataset.hydrated = 'true';
+
+            var type = wrapper.dataset.bannerType;
+            var tag = 'iwocapay-' + type + '-banner';
+            var el = document.createElement(tag);
+
+            var theme = wrapper.dataset.theme;
+            if (theme) el.setAttribute('theme', theme);
+
+            if (type.startsWith('signposting')) {
+                var duration = wrapper.dataset.duration;
+                var interest = wrapper.dataset.interest;
+                if (duration) el.setAttribute('duration', duration);
+                if (interest) el.setAttribute('interest', interest);
+            }
+
+            if (type.startsWith('spending-limit')) {
+                var href = wrapper.dataset.href;
+                var duration = wrapper.dataset.duration;
+                if (href) el.setAttribute('href', href);
+                if (duration) el.setAttribute('duration', duration);
+            }
+
+            wrapper.appendChild(el);
+        });
+    }
+
+    function fetchRepaymentAmounts() {
+        var banners = document.querySelectorAll(
+            'iwocapay-price-calculator-pdp-banner[data-amount], iwocapay-price-calculator-plp-banner[data-amount]'
+        );
+
+        var requests = {};
+
+        banners.forEach(function(banner) {
+            var amount = banner.dataset.amount;
+            var months = banner.dataset.months || '3';
+
+            if (!amount || parseFloat(amount) < 5 || months === '1') return;
+
+            var key = amount + '_' + months;
+
+            if (!requests[key]) {
+                var url = '/iwocapay/banner/pricing?amount=' + encodeURIComponent(amount) + '&months=' + encodeURIComponent(months);
+                requests[key] = fetch(url, {credentials: 'omit'}).then(function(res) { return res.json(); });
+            }
+
+            requests[key].then(function(data) {
+                if (data.repayment_amount) {
+                    var formatted = new Intl.NumberFormat('en-GB', {
+                        style: 'currency',
+                        currency: 'GBP'
+                    }).format(data.repayment_amount);
+                    banner.setAttribute('repayment-amount', formatted);
+                }
+            }).catch(function() {});
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            hydrateBanners();
+            fetchRepaymentAmounts();
+        });
+    } else {
+        hydrateBanners();
+        fetchRepaymentAmounts();
+    }
+})();
+</script>

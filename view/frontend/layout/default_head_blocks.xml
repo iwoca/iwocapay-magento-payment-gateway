@@ -2,4 +2,11 @@
     <head>
         <script src="Iwoca_Iwocapay::js/reload-mini-cart.js"/>
     </head>
+    <body>
+        <referenceContainer name="before.body.end">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="iwocapay.banner.script"
+                   template="Iwoca_Iwocapay::banner-script.phtml"/>
+        </referenceContainer>
+    </body>
 </page>

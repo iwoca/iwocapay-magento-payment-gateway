@@ -1,3 +1,10 @@
+# [2.1.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.0.1...2.1.0) (2026-06-08)
+
+
+### Features
+
+* Add Page Builder banners and PLP/PDP pricing banners ([d1839b0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/d1839b0abd1b84841e5d89d5559f761d0f20ec37))
+
 ## [2.0.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.0.0...2.0.1) (2026-06-02)
 
 

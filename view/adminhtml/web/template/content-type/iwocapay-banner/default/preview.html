@@ -1,0 +1,12 @@
+<div class="pagebuilder-content-type pagebuilder-iwocapay-banner" event="{ mouseover: onMouseOver, mouseout: onMouseOut }, mouseoverBubble: false">
+    <render args="getOptions().template"></render>
+    <div attr="data.main.attributes" ko-style="data.main.style" css="data.main.css" class="iwocapay-banner iwocapay-banner--preview">
+        <div class="iwocapay-banner__label">
+            <strong>iwocaPay Banner</strong>
+        </div>
+        <div class="iwocapay-banner__info">
+            <span>Type: <strong data-bind="text: data.main.attributes()['data-banner-type'] || 'signposting-hero'"></strong></span>
+            <span> | Theme: <strong data-bind="text: data.main.attributes()['data-theme'] || 'dark'"></strong></span>
+        </div>
+    </div>
+</div>

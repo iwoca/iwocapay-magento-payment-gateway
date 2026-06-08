@@ -17,7 +17,7 @@
                 </field>
                 <field id="version" translate="label" type="label" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Plugin Version</label>
-                    <comment><![CDATA[2.0.1]]></comment>
+                    <comment><![CDATA[2.1.0]]></comment>
                 </field>
                 <!-- Required Settings -->
                 <group id="iwocapay_required" translate="label" showInDefault="1" showInWebsite="1" showInStore="1" sortOrder="10">
@@ -53,6 +53,42 @@
                         <comment>Set to 'Yes' to send invoice emails automatically.</comment>
                         <depends>
                             <field id="active">1</field>
+                        </depends>
+                    </field>
+                </group>
+
+                <!-- Price Banner Settings -->
+                <group id="iwocapay_banners" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Price Banners</label>
+                    <frontend_model>Magento\Config\Block\System\Config\Form\Fieldset</frontend_model>
+                    <field id="price_banner_enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Show price banners</label>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                        <config_path>payment/iwocapay/price_banner_enabled</config_path>
+                        <comment>Display "pay in X payments" banners on product and listing pages.</comment>
+                    </field>
+                    <field id="price_banner_months" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Payment duration</label>
+                        <config_path>payment/iwocapay/price_banner_months</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerDuration</source_model>
+                        <depends>
+                            <field id="price_banner_enabled">1</field>
+                        </depends>
+                    </field>
+                    <field id="price_banner_pricing" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Interest</label>
+                        <config_path>payment/iwocapay/price_banner_pricing</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerPricing</source_model>
+                        <depends>
+                            <field id="price_banner_enabled">1</field>
+                        </depends>
+                    </field>
+                    <field id="price_banner_theme" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Theme</label>
+                        <config_path>payment/iwocapay/price_banner_theme</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerTheme</source_model>
+                        <depends>
+                            <field id="price_banner_enabled">1</field>
                         </depends>
                     </field>
                 </group>

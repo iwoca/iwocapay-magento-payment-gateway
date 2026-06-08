@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_PageBuilder:etc/content_type.xsd">
+    <type name="iwocapay_banner"
+          label="iwocaPay Banner"
+          component="Magento_PageBuilder/js/content-type"
+          preview_component="Iwoca_Iwocapay/js/content-type/iwocapay-banner/preview"
+          form="pagebuilder_iwocapay_banner_form"
+          menu_section="iwocapay"
+          icon="icon-pagebuilder-banner"
+          sortOrder="10"
+          translate="label">
+        <children default_policy="deny"/>
+        <appearances>
+            <appearance default="true"
+                        name="default"
+                        preview_template="Iwoca_Iwocapay/content-type/iwocapay-banner/default/preview"
+                        master_template="Iwoca_Iwocapay/content-type/iwocapay-banner/default/master"
+                        reader="Magento_PageBuilder/js/master-format/read/configurable">
+                <elements>
+                    <element name="main">
+                        <style name="display" source="display" converter="Magento_PageBuilder/js/converter/style/display" preview_converter="Magento_PageBuilder/js/converter/style/preview/display"/>
+                        <style name="margins" storage_key="margins_and_padding" reader="Magento_PageBuilder/js/property/margins" converter="Magento_PageBuilder/js/converter/style/margins"/>
+                        <style name="padding" storage_key="margins_and_padding" reader="Magento_PageBuilder/js/property/paddings" converter="Magento_PageBuilder/js/converter/style/paddings"/>
+                        <attribute name="name" source="data-content-type"/>
+                        <attribute name="appearance" source="data-appearance"/>
+                        <attribute name="banner_type" source="data-banner-type"/>
+                        <attribute name="duration" source="data-duration"/>
+                        <attribute name="interest" source="data-interest"/>
+                        <attribute name="theme" source="data-theme"/>
+                        <attribute name="href" source="data-href"/>
+                        <css name="css_classes"/>
+                    </element>
+                </elements>
+            </appearance>
+        </appearances>
+    </type>
+</config>

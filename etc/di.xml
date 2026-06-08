@@ -85,4 +85,36 @@
             <argument name="logger" xsi:type="object">IwocapayLogger</argument>
         </arguments>
     </type>
+    <virtualType name="DefaultWYSIWYGValidator">
+        <arguments>
+            <argument name="allowedTags" xsi:type="array">
+                <item name="iwocapay-banner" xsi:type="string">iwocapay-banner</item>
+                <item name="iwocapay-signposting-hero-banner" xsi:type="string">iwocapay-signposting-hero-banner</item>
+                <item name="iwocapay-signposting-block-banner" xsi:type="string">iwocapay-signposting-block-banner</item>
+                <item name="iwocapay-signposting-side-banner" xsi:type="string">iwocapay-signposting-side-banner</item>
+                <item name="iwocapay-signposting-small-banner" xsi:type="string">iwocapay-signposting-small-banner</item>
+                <item name="iwocapay-spending-limit-wide-banner" xsi:type="string">iwocapay-spending-limit-wide-banner</item>
+                <item name="iwocapay-spending-limit-block-banner" xsi:type="string">iwocapay-spending-limit-block-banner</item>
+                <item name="iwocapay-spending-limit-side-banner" xsi:type="string">iwocapay-spending-limit-side-banner</item>
+                <item name="iwocapay-spending-limit-small-banner" xsi:type="string">iwocapay-spending-limit-small-banner</item>
+                <item name="iwocapay-price-calculator-pdp-banner" xsi:type="string">iwocapay-price-calculator-pdp-banner</item>
+                <item name="iwocapay-price-calculator-plp-banner" xsi:type="string">iwocapay-price-calculator-plp-banner</item>
+            </argument>
+            <argument name="allowedAttributes" xsi:type="array">
+                <item name="duration" xsi:type="string">duration</item>
+                <item name="interest" xsi:type="string">interest</item>
+                <item name="theme" xsi:type="string">theme</item>
+                <item name="href" xsi:type="string">href</item>
+                <item name="data-amount" xsi:type="string">data-amount</item>
+                <item name="data-months" xsi:type="string">data-months</item>
+                <item name="repayment-amount" xsi:type="string">repayment-amount</item>
+                <item name="data-banner-type" xsi:type="string">data-banner-type</item>
+                <item name="data-duration" xsi:type="string">data-duration</item>
+                <item name="data-interest" xsi:type="string">data-interest</item>
+                <item name="data-theme" xsi:type="string">data-theme</item>
+                <item name="data-href" xsi:type="string">data-href</item>
+                <item name="data-hydrated" xsi:type="string">data-hydrated</item>
+            </argument>
+        </arguments>
+    </virtualType>
 </config>

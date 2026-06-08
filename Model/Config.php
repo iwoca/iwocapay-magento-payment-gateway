@@ -32,6 +32,10 @@ class Config
     public const XML_CONFIG_PATH_ALLOW_SPECIFIC = 'payment/iwocapay/allowspecific';
     public const XML_CONFIG_PATH_SPECIFIC_COUNTRIES = 'payment/iwocapay/specificcountries';
     public const XML_CONFIG_PATH_ALLOWED_CURRENCIES = 'payment/iwocapay/allowed_currencies';
+    public const XML_CONFIG_PATH_PRICE_BANNER_ENABLED = 'payment/iwocapay/price_banner_enabled';
+    public const XML_CONFIG_PATH_PRICE_BANNER_MONTHS = 'payment/iwocapay/price_banner_months';
+    public const XML_CONFIG_PATH_PRICE_BANNER_PRICING = 'payment/iwocapay/price_banner_pricing';
+    public const XML_CONFIG_PATH_PRICE_BANNER_THEME = 'payment/iwocapay/price_banner_theme';
     public const XML_CONFIG_PATH_STAGING_BASE_URL = 'payment/iwocapay/staging_base_url';
     public const XML_CONFIG_PATH_PROD_BASE_URL = 'payment/iwocapay/prod_base_url';
     public const XML_CONFIG_PATH_API_BASE_PATH_LENDING = 'payment/iwocapay/api_base_path_lending';
@@ -189,6 +193,26 @@ class Config
     {
         $path = sprintf(self::XML_CONFIG_PATH_CALL_TO_ACTION, $methodCode);
         return (string)$this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
+    }
+
+    public function isPriceBannerEnabled(): bool
+    {
+        return $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_PRICE_BANNER_ENABLED, ScopeInterface::SCOPE_STORE);
+    }
+
+    public function getPriceBannerDuration(): string
+    {
+        return (string) ($this->scopeConfig->getValue(self::XML_CONFIG_PATH_PRICE_BANNER_MONTHS, ScopeInterface::SCOPE_STORE) ?: '3_months');
+    }
+
+    public function getPriceBannerPricing(): string
+    {
+        return (string) ($this->scopeConfig->getValue(self::XML_CONFIG_PATH_PRICE_BANNER_PRICING, ScopeInterface::SCOPE_STORE) ?: 'seller_pays');
+    }
+
+    public function getPriceBannerTheme(): string
+    {
+        return (string) ($this->scopeConfig->getValue(self::XML_CONFIG_PATH_PRICE_BANNER_THEME, ScopeInterface::SCOPE_STORE) ?: 'dark');
     }
 
     /**

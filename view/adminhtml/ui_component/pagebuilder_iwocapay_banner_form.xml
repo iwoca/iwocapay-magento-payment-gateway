@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd" extends="pagebuilder_base_form">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form_data_source</item>
+        </item>
+        <item name="label" xsi:type="string" translate="true">iwocaPay Banner</item>
+    </argument>
+    <settings>
+        <deps>
+            <dep>pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form_data_source</dep>
+        </deps>
+        <namespace>pagebuilder_iwocapay_banner_form</namespace>
+    </settings>
+    <dataSource name="pagebuilder_iwocapay_banner_form_data_source">
+        <argument name="data" xsi:type="array">
+            <item name="js_config" xsi:type="array">
+                <item name="component" xsi:type="string">Magento_PageBuilder/js/form/provider</item>
+            </item>
+        </argument>
+        <dataProvider name="pagebuilder_iwocapay_banner_form_data_source" class="Magento\PageBuilder\Model\ContentType\DataProvider">
+            <settings>
+                <requestFieldName/>
+                <primaryFieldName/>
+            </settings>
+        </dataProvider>
+    </dataSource>
+    <fieldset name="appearance_fieldset" component="Magento_PageBuilder/js/form/element/dependent-fieldset" sortOrder="10">
+        <settings>
+            <label translate="true">Appearance</label>
+            <additionalClasses>
+                <class name="admin__fieldset-visual-select-large">true</class>
+            </additionalClasses>
+            <collapsible>false</collapsible>
+            <opened>true</opened>
+            <imports>
+                <link name="hideFieldset">${$.name}.appearance:options</link>
+                <link name="hideLabel">${$.name}.appearance:options</link>
+            </imports>
+        </settings>
+        <field name="appearance" formElement="select" sortOrder="10" component="Magento_PageBuilder/js/form/element/dependent-visual-select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="default" xsi:type="string">default</item>
+                </item>
+            </argument>
+            <settings>
+                <additionalClasses>
+                    <class name="admin__field-wide">true</class>
+                    <class name="admin__field-visual-select-container">true</class>
+                </additionalClasses>
+                <dataType>text</dataType>
+                <validation>
+                    <rule name="required-entry" xsi:type="boolean">true</rule>
+                </validation>
+                <elementTmpl>Magento_PageBuilder/form/element/visual-select</elementTmpl>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options>
+                            <option name="default" xsi:type="array">
+                                <item name="value" xsi:type="string">default</item>
+                                <item name="label" xsi:type="string" translate="true">Default</item>
+                            </option>
+                        </options>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+    </fieldset>
+    <fieldset name="general" sortOrder="20">
+        <settings>
+            <label translate="true">Banner Settings</label>
+        </settings>
+        <field name="banner_type" sortOrder="10" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="default" xsi:type="string">signposting-hero</item>
+                    <item name="switcherConfig" xsi:type="array">
+                        <item name="enabled" xsi:type="boolean">true</item>
+                        <item name="rules" xsi:type="array">
+                            <item name="0" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-hero</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">hide</item></item>
+                                </item>
+                            </item>
+                            <item name="1" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-block</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">hide</item></item>
+                                </item>
+                            </item>
+                            <item name="2" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-side</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">hide</item></item>
+                                </item>
+                            </item>
+                            <item name="3" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-small</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">hide</item></item>
+                                </item>
+                            </item>
+                            <item name="4" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-wide</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">hide</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">hide</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">show</item></item>
+                                </item>
+                            </item>
+                            <item name="5" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-block</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">hide</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">show</item></item>
+                                </item>
+                            </item>
+                            <item name="6" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-side</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">show</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">hide</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">show</item></item>
+                                </item>
+                            </item>
+                            <item name="7" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-small</item>
+                                <item name="actions" xsi:type="array">
+                                    <item name="0" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.duration</item><item name="callback" xsi:type="string">hide</item></item>
+                                    <item name="1" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.interest</item><item name="callback" xsi:type="string">hide</item></item>
+                                    <item name="2" xsi:type="array"><item name="target" xsi:type="string">pagebuilder_iwocapay_banner_form.pagebuilder_iwocapay_banner_form.general.href</item><item name="callback" xsi:type="string">show</item></item>
+                                </item>
+                            </item>
+                        </item>
+                    </item>
+                </item>
+            </argument>
+            <settings>
+                <dataScope>banner_type</dataScope>
+                <dataType>text</dataType>
+                <label translate="true">Banner Type</label>
+                <validation>
+                    <rule name="required-entry" xsi:type="boolean">true</rule>
+                </validation>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options>
+                            <option name="signposting_hero" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-hero</item>
+                                <item name="label" xsi:type="string" translate="true">Signposting — Hero</item>
+                            </option>
+                            <option name="signposting_block" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-block</item>
+                                <item name="label" xsi:type="string" translate="true">Signposting — Block</item>
+                            </option>
+                            <option name="signposting_side" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-side</item>
+                                <item name="label" xsi:type="string" translate="true">Signposting — Side</item>
+                            </option>
+                            <option name="signposting_small" xsi:type="array">
+                                <item name="value" xsi:type="string">signposting-small</item>
+                                <item name="label" xsi:type="string" translate="true">Signposting — Small</item>
+                            </option>
+                            <option name="spending_limit_wide" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-wide</item>
+                                <item name="label" xsi:type="string" translate="true">Spending Limit — Wide</item>
+                            </option>
+                            <option name="spending_limit_block" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-block</item>
+                                <item name="label" xsi:type="string" translate="true">Spending Limit — Block</item>
+                            </option>
+                            <option name="spending_limit_side" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-side</item>
+                                <item name="label" xsi:type="string" translate="true">Spending Limit — Side</item>
+                            </option>
+                            <option name="spending_limit_small" xsi:type="array">
+                                <item name="value" xsi:type="string">spending-limit-small</item>
+                                <item name="label" xsi:type="string" translate="true">Spending Limit — Small</item>
+                            </option>
+                        </options>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+        <field name="duration" sortOrder="20" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="default" xsi:type="string">3_months</item>
+                </item>
+            </argument>
+            <settings>
+                <dataScope>duration</dataScope>
+                <dataType>text</dataType>
+                <label translate="true">Duration</label>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options>
+                            <option name="30_days" xsi:type="array">
+                                <item name="value" xsi:type="string">30_days</item>
+                                <item name="label" xsi:type="string" translate="true">30 days</item>
+                            </option>
+                            <option name="30_days_and_3_months" xsi:type="array">
+                                <item name="value" xsi:type="string">30_days_and_3_months</item>
+                                <item name="label" xsi:type="string" translate="true">30 days &amp; 3 months</item>
+                            </option>
+                            <option name="3_months" xsi:type="array">
+                                <item name="value" xsi:type="string">3_months</item>
+                                <item name="label" xsi:type="string" translate="true">3 months</item>
+                            </option>
+                            <option name="12_months" xsi:type="array">
+                                <item name="value" xsi:type="string">12_months</item>
+                                <item name="label" xsi:type="string" translate="true">12 months</item>
+                            </option>
+                            <option name="3_and_12_months" xsi:type="array">
+                                <item name="value" xsi:type="string">3_and_12_months</item>
+                                <item name="label" xsi:type="string" translate="true">3 and 12 months</item>
+                            </option>
+                            <option name="1_3_and_12_months" xsi:type="array">
+                                <item name="value" xsi:type="string">1_3_and_12_months</item>
+                                <item name="label" xsi:type="string" translate="true">1, 3 and 12 months</item>
+                            </option>
+                        </options>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+        <field name="interest" sortOrder="30" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="default" xsi:type="string">seller-pays</item>
+                </item>
+            </argument>
+            <settings>
+                <dataScope>interest</dataScope>
+                <dataType>text</dataType>
+                <label translate="true">Interest</label>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options>
+                            <option name="seller_pays" xsi:type="array">
+                                <item name="value" xsi:type="string">seller-pays</item>
+                                <item name="label" xsi:type="string" translate="true">Seller pays (interest free)</item>
+                            </option>
+                            <option name="buyer_pays" xsi:type="array">
+                                <item name="value" xsi:type="string">buyer-pays</item>
+                                <item name="label" xsi:type="string" translate="true">Buyer pays (interest bearing)</item>
+                            </option>
+                        </options>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+        <field name="theme" sortOrder="40" formElement="select">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="default" xsi:type="string">dark</item>
+                </item>
+            </argument>
+            <settings>
+                <dataScope>theme</dataScope>
+                <dataType>text</dataType>
+                <label translate="true">Theme</label>
+            </settings>
+            <formElements>
+                <select>
+                    <settings>
+                        <options>
+                            <option name="dark" xsi:type="array">
+                                <item name="value" xsi:type="string">dark</item>
+                                <item name="label" xsi:type="string" translate="true">Dark</item>
+                            </option>
+                            <option name="light" xsi:type="array">
+                                <item name="value" xsi:type="string">light</item>
+                                <item name="label" xsi:type="string" translate="true">Light</item>
+                            </option>
+                        </options>
+                    </settings>
+                </select>
+            </formElements>
+        </field>
+        <field name="href" sortOrder="50" formElement="input">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="default" xsi:type="string">https://www.iwocapay.com</item>
+                </item>
+            </argument>
+            <settings>
+                <dataScope>href</dataScope>
+                <dataType>text</dataType>
+                <label translate="true">CTA Link URL</label>
+            </settings>
+        </field>
+    </fieldset>
+</form>

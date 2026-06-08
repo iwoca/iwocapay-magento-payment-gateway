@@ -7,4 +7,7 @@
             </argument>
         </arguments>
     </type>
+    <type name="Magento\Catalog\Block\Product\ListProduct">
+        <plugin name="iwocapay_tile_banner_after_price" type="Iwoca\Iwocapay\Plugin\Catalog\ProductListPricePlugin"/>
+    </type>
 </config>

@@ -17,6 +17,10 @@
                 <redirect_path>iwocapay/process/callback</redirect_path>
                 <allowed_payment_terms><![CDATA[["PAY_LATER", "PAY_NOW"]]]></allowed_payment_terms>
                 <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
+                <price_banner_enabled>1</price_banner_enabled>
+                <price_banner_months>3_months</price_banner_months>
+                <price_banner_pricing>seller_pays</price_banner_pricing>
+                <price_banner_theme>dark</price_banner_theme>
                 <advanced>
                     <disable_abandoned_cart_cancellations>0</disable_abandoned_cart_cancellations>
                 </advanced>
