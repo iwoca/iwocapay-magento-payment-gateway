@@ -15,6 +15,8 @@ class Event implements HttpPostActionInterface, CsrfAwareActionInterface
     private const ALLOWED_EVENTS = [
         'CUSTOMER_VIEWED_PRICING_BANNER',
         'CUSTOMER_VIEWED_BLOCK_BANNER',
+        'CUSTOMER_VIEWED_SPENDING_LIMIT_BANNER',
+        'CUSTOMER_CLICKED_SPENDING_LIMIT_BANNER',
     ];
 
     private RequestInterface $request;

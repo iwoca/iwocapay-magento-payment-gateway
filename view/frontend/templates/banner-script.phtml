@@ -2,11 +2,11 @@
 <script>
 (function() {
     function hydrateBanners() {
-        var found = false;
+        var hasSignposting = false;
+        var hasSpendingLimit = false;
         document.querySelectorAll('iwocapay-banner[data-banner-type]').forEach(function(wrapper) {
             if (wrapper.dataset.hydrated) return;
             wrapper.dataset.hydrated = 'true';
-            found = true;
 
             var type = wrapper.dataset.bannerType;
             var tag = 'iwocapay-' + type + '-banner';
@@ -16,6 +16,7 @@
             if (theme) el.setAttribute('theme', theme);
 
             if (type.startsWith('signposting')) {
+                hasSignposting = true;
                 var duration = wrapper.dataset.duration;
                 var interest = wrapper.dataset.interest;
                 if (duration) el.setAttribute('duration', duration);
@@ -23,17 +24,27 @@
             }
 
             if (type.startsWith('spending-limit')) {
+                hasSpendingLimit = true;
                 var href = wrapper.dataset.href;
                 var duration = wrapper.dataset.duration;
                 if (href) el.setAttribute('href', href);
                 if (duration) el.setAttribute('duration', duration);
+                wrapper.addEventListener('click', function() {
+                    if (window.fireIwocapayBannerEvent) {
+                        window.fireIwocapayBannerEvent('CUSTOMER_CLICKED_SPENDING_LIMIT_BANNER');
+                    }
+                });
             }
 
             wrapper.appendChild(el);
         });
 
-        if (found && window.fireIwocapayBannerEvent) {
+        if (hasSignposting && window.fireIwocapayBannerEvent) {
             window.fireIwocapayBannerEvent('CUSTOMER_VIEWED_BLOCK_BANNER');
+        }
+
+        if (hasSpendingLimit && window.fireIwocapayBannerEvent) {
+            window.fireIwocapayBannerEvent('CUSTOMER_VIEWED_SPENDING_LIMIT_BANNER');
         }
     }
 

@@ -300,7 +300,7 @@
         <field name="href" sortOrder="50" formElement="input">
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
-                    <item name="default" xsi:type="string">https://www.iwocapay.com</item>
+                    <item name="default" xsi:type="string"></item>
                 </item>
             </argument>
             <settings>

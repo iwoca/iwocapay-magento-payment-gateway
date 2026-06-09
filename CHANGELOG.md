@@ -1,3 +1,10 @@
+# [2.3.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.2.0...2.3.0) (2026-06-09)
+
+
+### Features
+
+* add spending limit banner event tracking ([841e253](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/841e2531dcf5478654b5b183632bf1d972cd7a2f))
+
 # [2.2.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.1.0...2.2.0) (2026-06-09)
 
 

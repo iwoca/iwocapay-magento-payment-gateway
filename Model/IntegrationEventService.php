@@ -11,7 +11,7 @@ use Psr\Log\LoggerInterface;
 class IntegrationEventService
 {
     private const INTEGRATION_NAME = 'magento';
-    private const INTEGRATION_VERSION = '2.2.0';
+    private const INTEGRATION_VERSION = '2.3.0';
 
     private GuzzleClientFactory $guzzleClientFactory;
     private Config $config;
