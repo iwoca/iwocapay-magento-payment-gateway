@@ -85,6 +85,16 @@
             <argument name="logger" xsi:type="object">IwocapayLogger</argument>
         </arguments>
     </type>
+    <type name="Iwoca\Iwocapay\Model\IntegrationEventService">
+        <arguments>
+            <argument name="logger" xsi:type="object">IwocapayLogger</argument>
+        </arguments>
+    </type>
+    <type name="Iwoca\Iwocapay\Controller\Banner\Pricing">
+        <arguments>
+            <argument name="logger" xsi:type="object">IwocapayLogger</argument>
+        </arguments>
+    </type>
     <virtualType name="DefaultWYSIWYGValidator">
         <arguments>
             <argument name="allowedTags" xsi:type="array">

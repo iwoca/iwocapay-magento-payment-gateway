@@ -1,3 +1,10 @@
+# [2.2.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.1.0...2.2.0) (2026-06-09)
+
+
+### Features
+
+* Add integration event tracking for banners ([ef20c41](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/ef20c414f6be140ae0ec467d82477841eaa2d2e9))
+
 # [2.1.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.0.1...2.1.0) (2026-06-08)
 
 

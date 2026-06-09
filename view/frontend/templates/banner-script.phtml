@@ -2,9 +2,11 @@
 <script>
 (function() {
     function hydrateBanners() {
+        var found = false;
         document.querySelectorAll('iwocapay-banner[data-banner-type]').forEach(function(wrapper) {
             if (wrapper.dataset.hydrated) return;
             wrapper.dataset.hydrated = 'true';
+            found = true;
 
             var type = wrapper.dataset.bannerType;
             var tag = 'iwocapay-' + type + '-banner';
@@ -29,12 +31,20 @@
 
             wrapper.appendChild(el);
         });
+
+        if (found && window.fireIwocapayBannerEvent) {
+            window.fireIwocapayBannerEvent('CUSTOMER_VIEWED_BLOCK_BANNER');
+        }
     }
 
     function fetchRepaymentAmounts() {
         var banners = document.querySelectorAll(
             'iwocapay-price-calculator-pdp-banner[data-amount], iwocapay-price-calculator-plp-banner[data-amount]'
         );
+
+        if (banners.length > 0 && window.fireIwocapayBannerEvent) {
+            window.fireIwocapayBannerEvent('CUSTOMER_VIEWED_PRICING_BANNER');
+        }
 
         var requests = {};
 

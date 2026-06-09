@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Iwoca\Iwocapay\Controller\Banner;
 
 use Iwoca\Iwocapay\Model\Config;
+use Iwoca\Iwocapay\Model\IntegrationEventService;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\App\CacheInterface;
 use Magento\Framework\App\RequestInterface;
@@ -28,6 +29,7 @@ class Pricing implements HttpGetActionInterface
     private ClientFactory $httpClientFactory;
     private LoggerInterface $logger;
     private SessionManagerInterface $session;
+    private IntegrationEventService $eventService;
 
     public function __construct(
         JsonFactory $jsonFactory,
@@ -36,7 +38,8 @@ class Pricing implements HttpGetActionInterface
         CacheInterface $cache,
         ClientFactory $httpClientFactory,
         LoggerInterface $logger,
-        SessionManagerInterface $session
+        SessionManagerInterface $session,
+        IntegrationEventService $eventService
     ) {
         $this->jsonFactory = $jsonFactory;
         $this->config = $config;
@@ -45,6 +48,7 @@ class Pricing implements HttpGetActionInterface
         $this->httpClientFactory = $httpClientFactory;
         $this->logger = $logger;
         $this->session = $session;
+        $this->eventService = $eventService;
     }
 
     public function execute()
@@ -101,6 +105,10 @@ class Pricing implements HttpGetActionInterface
             'promotions' => 'equal_repayments',
         ]);
 
+        $startTime = microtime(true);
+        $result = null;
+        $error = false;
+
         try {
             $client = $this->httpClientFactory->create();
             $client->setTimeout(5);
@@ -108,14 +116,28 @@ class Pricing implements HttpGetActionInterface
 
             if ($client->getStatus() !== 200) {
                 $this->logger->error('iwocaPay pricing API returned status ' . $client->getStatus());
-                return null;
+                $error = true;
+            } else {
+                $data = json_decode($client->getBody(), true);
+                $result = isset($data['data'][0]['total']) ? (float) $data['data'][0]['total'] : null;
             }
-
-            $data = json_decode($client->getBody(), true);
-            return isset($data['data'][0]['total']) ? (float) $data['data'][0]['total'] : null;
         } catch (\Exception $e) {
             $this->logger->error('iwocaPay pricing API error: ' . $e->getMessage());
-            return null;
+            $error = true;
         }
+
+        $meta = [
+            'request_duration_ms' => round((microtime(true) - $startTime) * 1000),
+            'amount' => $amount,
+            'loan_duration' => $months,
+            'rate' => $rate,
+            'result' => $result,
+        ];
+        if ($error) {
+            $meta['error'] = true;
+        }
+        $this->eventService->send('PRICING_BANNER_LOADED', $meta);
+
+        return $result;
     }
 }

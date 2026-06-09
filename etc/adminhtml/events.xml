@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="admin_system_config_changed_section_payment">
+        <observer name="iwocapay_track_banner_setting_change"
+                  instance="Iwoca\Iwocapay\Observer\TrackBannerSettingChange"/>
+    </event>
+    <event name="cms_page_save_after">
+        <observer name="iwocapay_track_banner_page_change"
+                  instance="Iwoca\Iwocapay\Observer\TrackBannerContentChange"/>
+    </event>
+    <event name="cms_block_save_after">
+        <observer name="iwocapay_track_banner_block_change"
+                  instance="Iwoca\Iwocapay\Observer\TrackBannerContentChange"/>
+    </event>
+</config>
