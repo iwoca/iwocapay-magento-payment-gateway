@@ -1,3 +1,10 @@
+## [2.3.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.0...2.3.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* update banner config wording to external language (IP-3268) ([b47afe1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/b47afe13e97896f271a4c750645157b78847cd0b))
+
 # [2.3.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.2.0...2.3.0) (2026-06-09)
 
 

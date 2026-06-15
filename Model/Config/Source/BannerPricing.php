@@ -10,8 +10,8 @@ class BannerPricing implements OptionSourceInterface
     public function toOptionArray()
     {
         return [
-            ['value' => 'seller_pays', 'label' => __('Seller pays (interest free for buyer)')],
-            ['value' => 'buyer_pays', 'label' => __('Buyer pays (interest bearing)')],
+            ['value' => 'seller_pays', 'label' => __('Free for your customers (interest free for customer)')],
+            ['value' => 'buyer_pays', 'label' => __('Free for you (interest bearing for customer)')],
         ];
     }
 }

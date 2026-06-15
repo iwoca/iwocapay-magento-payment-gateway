@@ -258,11 +258,11 @@
                         <options>
                             <option name="seller_pays" xsi:type="array">
                                 <item name="value" xsi:type="string">seller-pays</item>
-                                <item name="label" xsi:type="string" translate="true">Seller pays (interest free)</item>
+                                <item name="label" xsi:type="string" translate="true">Free for your customers (interest free for customer)</item>
                             </option>
                             <option name="buyer_pays" xsi:type="array">
                                 <item name="value" xsi:type="string">buyer-pays</item>
-                                <item name="label" xsi:type="string" translate="true">Buyer pays (interest bearing)</item>
+                                <item name="label" xsi:type="string" translate="true">Free for you (interest bearing for customer)</item>
                             </option>
                         </options>
                     </settings>
