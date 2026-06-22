@@ -34,7 +34,6 @@ It checks the following conditions:
     - check if the current quote is empty (this avoids overriding the quote with the previous one)
     - check if the last order was paid with iwocaPay
     - cancel the previous order
-    - make sure enough stoke is available
     - restore the quote
 - If the request is a redirect to iwocaPay:
     Set the allow_cancel_order flag to true
@@ -114,6 +113,7 @@ class CustomerReturnObserver implements ObserverInterface
      * @param PageIdentifier $pageIdentifier
      * @param CartRepositoryInterface $cartRepository
      * @param RequestInterface $request
+     * @param ScopeConfigInterface $scopeConfig
      */
     public function __construct(
         LoggerInterface         $logger,

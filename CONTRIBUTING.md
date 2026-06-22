@@ -42,11 +42,22 @@ Files listed in `.publicignore` are removed before publishing to GitHub:
 
 ### Version placeholder
 
-Use `$DEPLOY_VERSION` in PHP and XML files where you need the version number. This placeholder exists only in our GitLab source — it gets replaced with the real version (e.g. `2.0.1`) when publishing to GitHub.
+`Model/Version.php` is the single source of truth for the version. Its `VERSION`
+constant holds the only `$DEPLOY_VERSION` placeholder — CI replaces it with the
+real version (e.g. `2.0.1`) when publishing to GitHub. The placeholder exists
+only in our GitLab source.
 
-Current locations:
+Anything that needs the version at runtime injects `Version` and calls `get()`,
+rather than embedding its own placeholder. This keeps the version in one place,
+so it can never ship un-substituted from a file CI didn't envsubst, and a bump
+is a one-line change.
+
+Consumers:
 - `Model/IwocaClientFactory.php` — sent as `iwocapay-integration-version` header
-- `etc/adminhtml/system.xml` — displayed in Magento admin panel
+- `Model/IntegrationEventService.php` — sent with integration events
+- `Model/CredentialValidator.php` — sent with the connection_check request
+- `Block/System/Config/VersionComment.php` — backs the version shown in the
+  Magento admin panel (wired in `etc/adminhtml/system.xml`)
 
 ### No version in composer.json
 

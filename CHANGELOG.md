@@ -1,3 +1,10 @@
+## [2.3.2](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.1...2.3.2) (2026-06-22)
+
+
+### Bug Fixes
+
+* validate credentials fields on save payment settings ([b57f9e1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/b57f9e1e17a2794ee59fff76e92c45e620ed9948))
+
 ## [2.3.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.0...2.3.1) (2026-06-15)
 
 

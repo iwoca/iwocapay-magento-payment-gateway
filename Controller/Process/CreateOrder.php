@@ -58,6 +58,7 @@ class CreateOrder implements HttpGetActionInterface
      * @param CartRepositoryInterface $quoteRepository
      * @param StoreManagerInterface $storeManager
      * @param LoggerInterface $logger
+     * @param ScopeConfigInterface $scopeConfig
      */
     public function __construct(
         ResultFactory                      $resultFactory,

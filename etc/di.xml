@@ -90,6 +90,11 @@
             <argument name="logger" xsi:type="object">IwocapayLogger</argument>
         </arguments>
     </type>
+    <type name="Iwoca\Iwocapay\Model\CredentialValidator">
+        <arguments>
+            <argument name="logger" xsi:type="object">IwocapayLogger</argument>
+        </arguments>
+    </type>
     <type name="Iwoca\Iwocapay\Controller\Banner\Pricing">
         <arguments>
             <argument name="logger" xsi:type="object">IwocapayLogger</argument>

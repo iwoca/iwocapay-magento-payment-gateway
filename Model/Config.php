@@ -42,6 +42,7 @@ class Config
     public const XML_CONFIG_PATH_API_BASE_PATH_IWOCAPAY = 'payment/iwocapay/api_base_path_iwocapay';
     public const XML_CONFIG_PATH_API_PATH_CREATE_ORDER = 'payment/iwocapay/api_path_create_order';
     public const XML_CONFIG_PATH_API_PATH_GET_ORDER = 'payment/iwocapay/api_path_get_order';
+    public const XML_CONFIG_PATH_API_PATH_CONNECTION_CHECK = 'payment/iwocapay/api_path_connection_check';
 
     public const CONFIG_TYPE_CREATE_ORDER_ENDPOINT = 'create-order';
     public const CONFIG_TYPE_GET_ORDER_ENDPOINT = 'get-order';
@@ -289,6 +290,47 @@ class Config
         }
 
         return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_PROD_BASE_URL);
+    }
+
+    /**
+     * Resolve the iwoca base URL for an explicit mode.
+     *
+     * Unlike getBaseUrl(), which reads the stored mode, this takes the mode
+     * directly so credential validation can build the URL from the value the
+     * seller just submitted (which may differ from what's stored).
+     *
+     * @param int $mode One of Mode::STAGING_MODE / Mode::PROD_MODE.
+     * @return string
+     */
+    public function getBaseUrlForMode(int $mode): string
+    {
+        if ($mode === Mode::STAGING_MODE) {
+            return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_STAGING_BASE_URL);
+        }
+
+        return (string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_PROD_BASE_URL);
+    }
+
+    /**
+     * Build the connection_check URL for an explicit seller id and mode.
+     *
+     * The endpoint returns 200 only when the access token is valid AND belongs
+     * to the given seller in that environment, so it is used to verify
+     * credentials before they are saved. Built from explicit values (rather
+     * than stored config) so it can validate what the seller just submitted.
+     *
+     * @param string $sellerId
+     * @param int $mode One of Mode::STAGING_MODE / Mode::PROD_MODE.
+     * @return string
+     */
+    public function getConnectionCheckUrl(string $sellerId, int $mode): string
+    {
+        $baseUrl = rtrim($this->getBaseUrlForMode($mode), '/');
+        $basePath = trim((string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_API_BASE_PATH_IWOCAPAY), '/');
+        $apiPath = trim((string)$this->scopeConfig->getValue(self::XML_CONFIG_PATH_API_PATH_CONNECTION_CHECK), '/');
+        $apiPath = str_replace(':sellerId', rawurlencode($sellerId), $apiPath);
+
+        return $baseUrl . '/' . $basePath . '/' . $apiPath . '/';
     }
 
     /**

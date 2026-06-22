@@ -42,6 +42,8 @@ class PageIdentifier extends AbstractHelper
      *
      * @param Context $context
      * @param RequestInterface $request
+     * @param ResponseInterface $response
+     * @param StoreManagerInterface $storeManager
      */
     public function __construct(Context $context, RequestInterface $request, ResponseInterface $response, StoreManagerInterface $storeManager)
     {
@@ -131,7 +133,7 @@ class PageIdentifier extends AbstractHelper
             return true;
         }
 
-        // Additional checks for specific cart actions
+        // Also treat the minicart controller as a basket page (the cart controller is handled above)
         if ($routeName === 'checkout' && in_array($controllerName, ['cart', 'minicart'])) {
             return true;
         }

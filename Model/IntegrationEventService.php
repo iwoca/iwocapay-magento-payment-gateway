@@ -11,12 +11,12 @@ use Psr\Log\LoggerInterface;
 class IntegrationEventService
 {
     private const INTEGRATION_NAME = 'magento';
-    private const INTEGRATION_VERSION = '2.3.1';
 
     private GuzzleClientFactory $guzzleClientFactory;
     private Config $config;
     private Json $jsonSerializer;
     private LoggerInterface $logger;
+    private Version $version;
     private array $buffer = [];
     private bool $shutdownRegistered = false;
 
@@ -24,12 +24,14 @@ class IntegrationEventService
         GuzzleClientFactory $guzzleClientFactory,
         Config $config,
         Json $jsonSerializer,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        Version $version
     ) {
         $this->guzzleClientFactory = $guzzleClientFactory;
         $this->config = $config;
         $this->jsonSerializer = $jsonSerializer;
         $this->logger = $logger;
+        $this->version = $version;
     }
 
     public function send(string $eventType, array $metaData = []): void
@@ -80,7 +82,7 @@ class IntegrationEventService
                 'data' => [
                     'event_type' => $event['event_type'],
                     'integration_name' => self::INTEGRATION_NAME,
-                    'integration_version' => self::INTEGRATION_VERSION,
+                    'integration_version' => $this->version->get(),
                     'meta_data' => !empty($event['meta_data']) ? $event['meta_data'] : new \stdClass(),
                 ],
             ]);

@@ -31,21 +31,29 @@ class IwocaClientFactory
     private LoggerInterface $logger;
 
     /**
+     * @var Version
+     */
+    private Version $version;
+
+    /**
      * @param GuzzleClientFactory $guzzleClientFactory
      * @param Config $config
      * @param Hmac $hmac
      * @param LoggerInterface $logger
+     * @param Version $version
      */
     public function __construct(
         GuzzleClientFactory $guzzleClientFactory,
         Config $config,
         Hmac $hmac,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        Version $version
     ) {
         $this->guzzleClientFactory = $guzzleClientFactory;
         $this->config = $config;
         $this->hmac = $hmac;
         $this->logger = $logger;
+        $this->version = $version;
     }
 
     /**
@@ -60,7 +68,7 @@ class IwocaClientFactory
                 'Cache-Control' => 'nocache',
                 'Content-Type' => 'application/json',
                 'Authorization' => sprintf('Bearer %s', $this->config->getSellerAccessToken()),
-                'iwocapay-integration-version' => '2.3.1'
+                'iwocapay-integration-version' => $this->version->get()
             ],
         ];
 
