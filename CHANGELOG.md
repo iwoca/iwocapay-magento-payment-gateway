@@ -1,3 +1,10 @@
+# [2.4.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.3...2.4.0) (2026-06-25)
+
+
+### Features
+
+* persist view-event dedup via localStorage ([eca234e](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/eca234e9d76fbe828ad8201ae7c96f6cc9685dbd))
+
 ## [2.3.3](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.2...2.3.3) (2026-06-25)
 
 

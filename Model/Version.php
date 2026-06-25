@@ -7,7 +7,7 @@ namespace Iwoca\Iwocapay\Model;
  * Single source of truth for the module's integration version.
  *
  * The VERSION constant below is the ONLY place that carries the release
- * number. CI substitutes the 2.3.3 placeholder at publish time (see
+ * number. CI substitutes the 2.4.0 placeholder at publish time (see
  * .gitlab-ci.yml, which runs envsubst over every .php/.xml file). Everything
  * that needs the version at runtime - request headers, connection checks,
  * integration events, the admin display - injects this class and calls get()
@@ -20,7 +20,7 @@ namespace Iwoca\Iwocapay\Model;
  */
 class Version
 {
-    private const VERSION = '2.3.3';
+    private const VERSION = '2.4.0';
 
     public function get(): string
     {
