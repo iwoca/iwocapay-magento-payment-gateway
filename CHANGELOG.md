@@ -1,3 +1,10 @@
+## [2.3.3](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.2...2.3.3) (2026-06-25)
+
+
+### Bug Fixes
+
+* add daily heartbeat version report ([d3d401b](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/d3d401bd9588c8b57d3e14e4dcd91ce5cdbc3b13))
+
 ## [2.3.2](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.1...2.3.2) (2026-06-22)
 
 

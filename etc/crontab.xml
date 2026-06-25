@@ -10,6 +10,10 @@
              method="execute">
             <schedule>*/15 * * * *</schedule>
         </job>
+        <job name="iwoca_pay_heartbeat" instance="Iwoca\Iwocapay\Cron\Heartbeat"
+             method="execute">
+            <schedule>0 4 * * *</schedule>
+        </job>
     </group>
 </config>
 
