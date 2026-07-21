@@ -4,5 +4,7 @@
     <type name="Magento\Config\Model\Config">
         <plugin name="iwocapay_validate_credentials_on_save"
                 type="Iwoca\Iwocapay\Plugin\Config\ValidateCredentialsOnSave"/>
+        <plugin name="iwocapay_validate_banner_durations_on_save"
+                type="Iwoca\Iwocapay\Plugin\Config\ValidateBannerDurationsOnSave"/>
     </type>
 </config>

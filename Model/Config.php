@@ -33,8 +33,13 @@ class Config
     public const XML_CONFIG_PATH_SPECIFIC_COUNTRIES = 'payment/iwocapay/specificcountries';
     public const XML_CONFIG_PATH_ALLOWED_CURRENCIES = 'payment/iwocapay/allowed_currencies';
     public const XML_CONFIG_PATH_PRICE_BANNER_ENABLED = 'payment/iwocapay/price_banner_enabled';
-    public const XML_CONFIG_PATH_PRICE_BANNER_MONTHS = 'payment/iwocapay/price_banner_months';
-    public const XML_CONFIG_PATH_PRICE_BANNER_PRICING = 'payment/iwocapay/price_banner_pricing';
+    public const XML_CONFIG_PATH_PRICE_BANNER_30D_ENABLED = 'payment/iwocapay/price_banner_30d_enabled';
+    public const XML_CONFIG_PATH_PRICE_BANNER_30D_INTEREST = 'payment/iwocapay/price_banner_30d_interest';
+    public const XML_CONFIG_PATH_PRICE_BANNER_3M_ENABLED = 'payment/iwocapay/price_banner_3m_enabled';
+    public const XML_CONFIG_PATH_PRICE_BANNER_3M_INTEREST = 'payment/iwocapay/price_banner_3m_interest';
+    public const XML_CONFIG_PATH_PRICE_BANNER_12M_ENABLED = 'payment/iwocapay/price_banner_12m_enabled';
+    public const XML_CONFIG_PATH_PRICE_BANNER_12M_INTEREST = 'payment/iwocapay/price_banner_12m_interest';
+    public const XML_CONFIG_PATH_PRICE_BANNER_VAT = 'payment/iwocapay/price_banner_vat';
     public const XML_CONFIG_PATH_PRICE_BANNER_THEME = 'payment/iwocapay/price_banner_theme';
     public const XML_CONFIG_PATH_STAGING_BASE_URL = 'payment/iwocapay/staging_base_url';
     public const XML_CONFIG_PATH_PROD_BASE_URL = 'payment/iwocapay/prod_base_url';
@@ -196,19 +201,113 @@ class Config
         return (string)$this->scopeConfig->getValue($path, ScopeInterface::SCOPE_STORE);
     }
 
+    /**
+     * The instalment terms offered on banners, in ascending duration order.
+     * `duration` is the web-component enum; `months` feeds the pricing endpoint.
+     */
+    private const BANNER_TERMS = [
+        [
+            'key' => '30d',
+            'duration' => '30_days',
+            'months' => 1,
+            'enabledPath' => self::XML_CONFIG_PATH_PRICE_BANNER_30D_ENABLED,
+            'interestPath' => self::XML_CONFIG_PATH_PRICE_BANNER_30D_INTEREST,
+        ],
+        [
+            'key' => '3m',
+            'duration' => '3_months',
+            'months' => 3,
+            'enabledPath' => self::XML_CONFIG_PATH_PRICE_BANNER_3M_ENABLED,
+            'interestPath' => self::XML_CONFIG_PATH_PRICE_BANNER_3M_INTEREST,
+        ],
+        [
+            'key' => '12m',
+            'duration' => '12_months',
+            'months' => 12,
+            'enabledPath' => self::XML_CONFIG_PATH_PRICE_BANNER_12M_ENABLED,
+            'interestPath' => self::XML_CONFIG_PATH_PRICE_BANNER_12M_INTEREST,
+        ],
+    ];
+
     public function isPriceBannerEnabled(): bool
     {
         return $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_PRICE_BANNER_ENABLED, ScopeInterface::SCOPE_STORE);
     }
 
-    public function getPriceBannerDuration(): string
+    /**
+     * Enabled instalment terms in ascending duration order. Each entry:
+     *   ['key' => '3m', 'duration' => '3_months', 'months' => 3, 'interest' => 'seller_pays']
+     *
+     * @return array<int, array{key: string, duration: string, months: int, interest: string}>
+     */
+    public function getEnabledBannerTerms(): array
     {
-        return (string) ($this->scopeConfig->getValue(self::XML_CONFIG_PATH_PRICE_BANNER_MONTHS, ScopeInterface::SCOPE_STORE) ?: '3_months');
+        $terms = [];
+        foreach (self::BANNER_TERMS as $term) {
+            if (!$this->scopeConfig->isSetFlag($term['enabledPath'], ScopeInterface::SCOPE_STORE)) {
+                continue;
+            }
+            $terms[] = [
+                'key' => $term['key'],
+                'duration' => $term['duration'],
+                'months' => $term['months'],
+                'interest' => (string) ($this->scopeConfig->getValue($term['interestPath'], ScopeInterface::SCOPE_STORE) ?: 'seller_pays'),
+            ];
+        }
+        return $terms;
     }
 
-    public function getPriceBannerPricing(): string
+    /**
+     * The single most attractive offer for the PDP/PLP banner: the longest
+     * enabled instalment term (lowest monthly figure), falling back to the
+     * 30-day offer if no instalment term is enabled. Null if nothing enabled.
+     *
+     * @return array{key: string, duration: string, months: int, interest: string}|null
+     */
+    public function getBestBannerTerm(): ?array
     {
-        return (string) ($this->scopeConfig->getValue(self::XML_CONFIG_PATH_PRICE_BANNER_PRICING, ScopeInterface::SCOPE_STORE) ?: 'seller_pays');
+        $terms = $this->getEnabledBannerTerms();
+        if (!$terms) {
+            return null;
+        }
+
+        $instalments = array_filter($terms, static fn (array $t): bool => $t['months'] > 1);
+        if ($instalments) {
+            return end($instalments) ?: null;
+        }
+
+        return $terms[0];
+    }
+
+    /**
+     * The web-component `duration` enum representing the full enabled set, so
+     * the PDP/PLP banner lists every offered term ("Pay over 1, 3 or 12
+     * monthly instalments from …") while the price is still driven by the best
+     * (longest) term via getBestBannerTerm(). Null if nothing is enabled.
+     *
+     * Note: the component supports a fixed enum set; {30d, 12m} (no 3m) has no
+     * combined enum, so it falls back to the 12-month single-term label.
+     */
+    public function getBannerDurationEnum(): ?string
+    {
+        $has30d = $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_PRICE_BANNER_30D_ENABLED, ScopeInterface::SCOPE_STORE);
+        $has3m = $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_PRICE_BANNER_3M_ENABLED, ScopeInterface::SCOPE_STORE);
+        $has12m = $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_PRICE_BANNER_12M_ENABLED, ScopeInterface::SCOPE_STORE);
+
+        return match (true) {
+            $has30d && $has3m && $has12m => '1_3_and_12_months',
+            $has3m && $has12m => '3_and_12_months',
+            $has30d && $has3m => '30_days_and_3_months',
+            $has12m => '12_months',
+            $has3m => '3_months',
+            $has30d => '30_days',
+            default => null,
+        };
+    }
+
+    public function getPriceBannerVat(): string
+    {
+        return (string) ($this->scopeConfig->getValue(self::XML_CONFIG_PATH_PRICE_BANNER_VAT, ScopeInterface::SCOPE_STORE) ?: 'including');
     }
 
     public function getPriceBannerTheme(): string

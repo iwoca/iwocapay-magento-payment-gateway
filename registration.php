@@ -2,8 +2,10 @@
 
 use Magento\Framework\Component\ComponentRegistrar;
 
-ComponentRegistrar::register(
-    ComponentRegistrar::MODULE,
-    'Iwoca_Iwocapay',
-    __DIR__
-);
+if (class_exists(ComponentRegistrar::class)) {
+    ComponentRegistrar::register(
+        ComponentRegistrar::MODULE,
+        'Iwoca_Iwocapay',
+        __DIR__
+    );
+}

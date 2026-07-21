@@ -19,8 +19,13 @@
                 <allowed_payment_terms><![CDATA[["PAY_LATER", "PAY_NOW"]]]></allowed_payment_terms>
                 <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
                 <price_banner_enabled>1</price_banner_enabled>
-                <price_banner_months>3_months</price_banner_months>
-                <price_banner_pricing>seller_pays</price_banner_pricing>
+                <price_banner_30d_enabled>0</price_banner_30d_enabled>
+                <price_banner_30d_interest>seller_pays</price_banner_30d_interest>
+                <price_banner_3m_enabled>1</price_banner_3m_enabled>
+                <price_banner_3m_interest>seller_pays</price_banner_3m_interest>
+                <price_banner_12m_enabled>0</price_banner_12m_enabled>
+                <price_banner_12m_interest>seller_pays</price_banner_12m_interest>
+                <price_banner_vat>including</price_banner_vat>
                 <price_banner_theme>dark</price_banner_theme>
                 <advanced>
                     <disable_abandoned_cart_cancellations>0</disable_abandoned_cart_cancellations>

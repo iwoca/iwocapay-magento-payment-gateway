@@ -126,6 +126,7 @@
                 <item name="data-banner-type" xsi:type="string">data-banner-type</item>
                 <item name="data-duration" xsi:type="string">data-duration</item>
                 <item name="data-interest" xsi:type="string">data-interest</item>
+                <item name="data-vat" xsi:type="string">data-vat</item>
                 <item name="data-theme" xsi:type="string">data-theme</item>
                 <item name="data-href" xsi:type="string">data-href</item>
                 <item name="data-hydrated" xsi:type="string">data-hydrated</item>

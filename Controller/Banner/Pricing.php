@@ -61,7 +61,15 @@ class Pricing implements HttpGetActionInterface
 
         $amount = (float) $this->request->getParam('amount', 0);
         $months = (int) $this->request->getParam('months', 3);
-        $pricing = $this->config->getPriceBannerPricing();
+        // Per-duration interest is passed by the caller (each term can differ).
+        // Accept either the kebab form (from the banner's data-interest) or the
+        // stored underscore form. Default to the interest-free path when absent —
+        // safe, no external API call.
+        $pricing = in_array(
+            $this->request->getParam('pricing'),
+            ['buyer_pays', 'buyer-pays'],
+            true
+        ) ? 'buyer_pays' : 'seller_pays';
 
         if ($amount < 5 || !isset(self::RATE_MAP[$months])) {
             $result->setData(['repayment_amount' => null]);
@@ -75,7 +83,9 @@ class Pricing implements HttpGetActionInterface
         }
 
         $rate = self::RATE_MAP[$months];
-        $cacheKey = self::CACHE_PREFIX . md5($rate . '_' . $amount . '_' . $months);
+        // Include $pricing in the key so it stays correct even if the
+        // seller-pays short-circuit above is ever changed to reach the cache.
+        $cacheKey = self::CACHE_PREFIX . md5($pricing . '_' . $rate . '_' . $amount . '_' . $months);
 
         $cached = $this->cache->load($cacheKey);
         if ($cached !== false) {

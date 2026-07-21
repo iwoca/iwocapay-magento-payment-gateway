@@ -48,6 +48,13 @@
         }
     }
 
+    function formatGbp(value) {
+        return new Intl.NumberFormat('en-GB', {
+            style: 'currency',
+            currency: 'GBP'
+        }).format(value);
+    }
+
     function fetchRepaymentAmounts() {
         var banners = document.querySelectorAll(
             'iwocapay-price-calculator-pdp-banner[data-amount], iwocapay-price-calculator-plp-banner[data-amount]'
@@ -60,25 +67,38 @@
         var requests = {};
 
         banners.forEach(function(banner) {
-            var amount = banner.dataset.amount;
+            var amount = parseFloat(banner.dataset.amount);
             var months = banner.dataset.months || '3';
 
-            if (!amount || parseFloat(amount) < 5 || months === '1') return;
+            // The 30-day offer shows "Pay nothing for 30 days" — no repayment figure.
+            if (isNaN(amount) || months === '1') return;
 
-            var key = amount + '_' + months;
+            // If catalog prices exclude VAT, gross up so repayments reflect what
+            // the customer actually pays (matches the Shopify integration).
+            var vat = banner.dataset.vat;
+            var principal = vat === 'excluding' ? amount * 1.2 : amount;
+
+            if (principal < 5) return;
+
+            // Interest-free terms are pure division — compute client-side, no API call.
+            var interest = banner.dataset.interest;
+            if (interest !== 'buyer-pays') {
+                banner.setAttribute('repayment-amount', formatGbp(principal / parseInt(months, 10)));
+                return;
+            }
+
+            var key = principal + '_' + months + '_' + interest;
 
             if (!requests[key]) {
-                var url = '/iwocapay/banner/pricing?amount=' + encodeURIComponent(amount) + '&months=' + encodeURIComponent(months);
+                var url = '/iwocapay/banner/pricing?amount=' + encodeURIComponent(principal)
+                    + '&months=' + encodeURIComponent(months)
+                    + '&pricing=' + encodeURIComponent(interest);
                 requests[key] = fetch(url, {credentials: 'omit'}).then(function(res) { return res.json(); });
             }
 
             requests[key].then(function(data) {
                 if (data.repayment_amount) {
-                    var formatted = new Intl.NumberFormat('en-GB', {
-                        style: 'currency',
-                        currency: 'GBP'
-                    }).format(data.repayment_amount);
-                    banner.setAttribute('repayment-amount', formatted);
+                    banner.setAttribute('repayment-amount', formatGbp(data.repayment_amount));
                 }
             }).catch(function() {});
         });

@@ -15,3 +15,8 @@ __MACOSX/
 [Tt]humbs.db
 *.DS_Store
 settings.json
+
+# Dev/test tooling — deps are provided by the host Magento install
+/vendor/
+/composer.lock
+/.phpunit.result.cache

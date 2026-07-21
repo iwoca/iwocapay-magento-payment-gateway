@@ -10,15 +10,6 @@ use Magento\Framework\View\Element\Template;
 
 class PdpPriceBanner extends Template
 {
-    private const DURATION_MONTHS = [
-        '30_days' => 1,
-        '30_days_and_3_months' => 3,
-        '3_months' => 3,
-        '12_months' => 12,
-        '3_and_12_months' => 3,
-        '1_3_and_12_months' => 12,
-    ];
-
     private Config $config;
     private Registry $registry;
 
@@ -54,10 +45,19 @@ class PdpPriceBanner extends Template
             return '';
         }
 
-        $duration = $this->escapeHtmlAttr($this->config->getPriceBannerDuration());
-        $months = self::DURATION_MONTHS[$this->config->getPriceBannerDuration()] ?? 3;
+        $term = $this->config->getBestBannerTerm();
+        if (!$term) {
+            return '';
+        }
+
+        // The price reflects the best (longest) term, but the copy lists every
+        // enabled term via the combined duration enum.
+        $duration = $this->escapeHtmlAttr($this->config->getBannerDurationEnum() ?? $term['duration']);
+        $months = (int) $term['months'];
+        $interest = $this->escapeHtmlAttr(str_replace('_', '-', $term['interest']));
+        $vat = $this->escapeHtmlAttr($this->config->getPriceBannerVat());
         $theme = $this->escapeHtmlAttr($this->config->getPriceBannerTheme());
 
-        return '<iwocapay-price-calculator-pdp-banner duration="' . $duration . '" theme="' . $theme . '" data-amount="' . $price . '" data-months="' . $months . '"></iwocapay-price-calculator-pdp-banner>';
+        return '<iwocapay-price-calculator-pdp-banner duration="' . $duration . '" theme="' . $theme . '" data-amount="' . $price . '" data-months="' . $months . '" data-interest="' . $interest . '" data-vat="' . $vat . '"></iwocapay-price-calculator-pdp-banner>';
     }
 }

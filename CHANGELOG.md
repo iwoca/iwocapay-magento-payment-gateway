@@ -1,3 +1,10 @@
+# [2.5.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.4.0...2.5.0) (2026-07-21)
+
+
+### Features
+
+* per-duration price banner config with per-term interest and VAT ([09ff2b8](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/09ff2b8a69ddd6a1aeb6985de5c1b6a423204eda))
+
 # [2.4.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.3.3...2.4.0) (2026-06-25)
 
 

@@ -69,29 +69,55 @@
                         <config_path>payment/iwocapay/price_banner_enabled</config_path>
                         <comment>Display "pay in X payments" banners on product and listing pages.</comment>
                     </field>
-                    <field id="price_banner_months" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                        <label>Payment duration</label>
-                        <config_path>payment/iwocapay/price_banner_months</config_path>
-                        <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerDuration</source_model>
-                        <depends>
-                            <field id="price_banner_enabled">1</field>
-                        </depends>
+                    <field id="price_banner_30d_enabled" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Pay in 30 days</label>
+                        <config_path>payment/iwocapay/price_banner_30d_enabled</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\OnOff</source_model>
                     </field>
-                    <field id="price_banner_pricing" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                        <label>Interest</label>
-                        <config_path>payment/iwocapay/price_banner_pricing</config_path>
+                    <field id="price_banner_30d_interest" translate="label" type="select" sortOrder="21" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>30 days interest</label>
+                        <config_path>payment/iwocapay/price_banner_30d_interest</config_path>
                         <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerPricing</source_model>
                         <depends>
-                            <field id="price_banner_enabled">1</field>
+                            <field id="price_banner_30d_enabled">1</field>
                         </depends>
+                    </field>
+                    <field id="price_banner_3m_enabled" translate="label" type="select" sortOrder="22" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Pay in 3 months</label>
+                        <config_path>payment/iwocapay/price_banner_3m_enabled</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\OnOff</source_model>
+                    </field>
+                    <field id="price_banner_3m_interest" translate="label" type="select" sortOrder="23" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>3 months interest</label>
+                        <config_path>payment/iwocapay/price_banner_3m_interest</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerPricing</source_model>
+                        <depends>
+                            <field id="price_banner_3m_enabled">1</field>
+                        </depends>
+                    </field>
+                    <field id="price_banner_12m_enabled" translate="label" type="select" sortOrder="24" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Pay in 12 months</label>
+                        <config_path>payment/iwocapay/price_banner_12m_enabled</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\OnOff</source_model>
+                    </field>
+                    <field id="price_banner_12m_interest" translate="label" type="select" sortOrder="25" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>12 months interest</label>
+                        <config_path>payment/iwocapay/price_banner_12m_interest</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerPricing</source_model>
+                        <depends>
+                            <field id="price_banner_12m_enabled">1</field>
+                        </depends>
+                    </field>
+                    <field id="price_banner_vat" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Do your product prices include VAT?</label>
+                        <config_path>payment/iwocapay/price_banner_vat</config_path>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerVat</source_model>
+                        <comment>If your catalog prices exclude VAT, banner repayments are grossed up by 20% so they reflect what the customer pays.</comment>
                     </field>
                     <field id="price_banner_theme" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Theme</label>
                         <config_path>payment/iwocapay/price_banner_theme</config_path>
                         <source_model>Iwoca\Iwocapay\Model\Config\Source\BannerTheme</source_model>
-                        <depends>
-                            <field id="price_banner_enabled">1</field>
-                        </depends>
                     </field>
                 </group>
 

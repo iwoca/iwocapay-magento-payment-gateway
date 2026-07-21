@@ -14,13 +14,16 @@ class TrackBannerSettingChange implements ObserverInterface
 {
     private IntegrationEventService $eventService;
     private ScopeConfigInterface $scopeConfig;
+    private Config $config;
 
     public function __construct(
         IntegrationEventService $eventService,
-        ScopeConfigInterface $scopeConfig
+        ScopeConfigInterface $scopeConfig,
+        Config $config
     ) {
         $this->eventService = $eventService;
         $this->scopeConfig = $scopeConfig;
+        $this->config = $config;
     }
 
     public function execute(Observer $observer): void
@@ -36,20 +39,18 @@ class TrackBannerSettingChange implements ObserverInterface
             ScopeInterface::SCOPE_STORE
         );
 
-        $pricingType = (string) $this->scopeConfig->getValue(
-            Config::XML_CONFIG_PATH_PRICE_BANNER_PRICING,
-            ScopeInterface::SCOPE_STORE
-        );
-
-        $duration = (string) $this->scopeConfig->getValue(
-            Config::XML_CONFIG_PATH_PRICE_BANNER_MONTHS,
-            ScopeInterface::SCOPE_STORE
+        $terms = array_map(
+            static fn (array $term): array => [
+                'duration' => $term['duration'],
+                'interest' => $term['interest'],
+            ],
+            $this->config->getEnabledBannerTerms()
         );
 
         $this->eventService->send('SELLER_ENABLED_PRICING_BANNERS', [
             'action' => $enabled ? 'enabled' : 'disabled',
-            'pricing_type' => $pricingType,
-            'pricing_duration' => $duration,
+            'terms' => $terms,
+            'vat' => $this->config->getPriceBannerVat(),
         ]);
     }
 }

@@ -10,15 +10,6 @@ use Magento\Framework\Escaper;
 
 class ProductListPricePlugin
 {
-    private const DURATION_MONTHS = [
-        '30_days' => 1,
-        '30_days_and_3_months' => 3,
-        '3_months' => 3,
-        '12_months' => 12,
-        '3_and_12_months' => 3,
-        '1_3_and_12_months' => 12,
-    ];
-
     private Config $config;
     private Escaper $escaper;
 
@@ -39,10 +30,19 @@ class ProductListPricePlugin
             return $result;
         }
 
-        $duration = $this->escaper->escapeHtmlAttr($this->config->getPriceBannerDuration());
-        $months = self::DURATION_MONTHS[$this->config->getPriceBannerDuration()] ?? 3;
+        $term = $this->config->getBestBannerTerm();
+        if (!$term) {
+            return $result;
+        }
+
+        // The price reflects the best (longest) term, but the copy lists every
+        // enabled term via the combined duration enum.
+        $duration = $this->escaper->escapeHtmlAttr($this->config->getBannerDurationEnum() ?? $term['duration']);
+        $months = (int) $term['months'];
+        $interest = $this->escaper->escapeHtmlAttr(str_replace('_', '-', $term['interest']));
+        $vat = $this->escaper->escapeHtmlAttr($this->config->getPriceBannerVat());
         $theme = $this->escaper->escapeHtmlAttr($this->config->getPriceBannerTheme());
 
-        return $result . '<iwocapay-price-calculator-plp-banner duration="' . $duration . '" theme="' . $theme . '" data-amount="' . $price . '" data-months="' . $months . '"></iwocapay-price-calculator-plp-banner>';
+        return $result . '<iwocapay-price-calculator-plp-banner duration="' . $duration . '" theme="' . $theme . '" data-amount="' . $price . '" data-months="' . $months . '" data-interest="' . $interest . '" data-vat="' . $vat . '"></iwocapay-price-calculator-plp-banner>';
     }
 }

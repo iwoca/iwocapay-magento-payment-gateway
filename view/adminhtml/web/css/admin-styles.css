@@ -10,3 +10,46 @@
     margin-left: 30px;
     margin-top: 15px;
 }
+
+/* Group each duration's enable + interest fields visually. The divider sits
+   above the 3-month and 12-month enable rows (always rendered) rather than
+   below the interest rows (hidden via <depends> when a duration is off), so
+   the three groups stay separated regardless of which durations are enabled. */
+/* Match by id suffix — the row id carries an environment-specific section
+   prefix (e.g. payment_gb_...) that we can't assume. The divider sits above
+   the 3m/12m enable rows; the matching space below it comes from padding the
+   preceding interest rows so each duration group is evenly separated. */
+tr[id$="_price_banner_30d_enabled"] > td.label,
+tr[id$="_price_banner_30d_enabled"] > td.value,
+tr[id$="_price_banner_3m_enabled"] > td.label,
+tr[id$="_price_banner_3m_enabled"] > td.value,
+tr[id$="_price_banner_12m_enabled"] > td.label,
+tr[id$="_price_banner_12m_enabled"] > td.value,
+tr[id$="_price_banner_vat"] > td.label,
+tr[id$="_price_banner_vat"] > td.value {
+    border-top: 1px solid #d6d6d6;
+    padding-top: 30px !important;
+}
+
+tr[id$="_price_banner_enabled"] > td.label,
+tr[id$="_price_banner_enabled"] > td.value,
+tr[id$="_price_banner_30d_interest"] > td.label,
+tr[id$="_price_banner_30d_interest"] > td.value,
+tr[id$="_price_banner_3m_interest"] > td.label,
+tr[id$="_price_banner_3m_interest"] > td.value,
+tr[id$="_price_banner_12m_interest"] > td.label,
+tr[id$="_price_banner_12m_interest"] > td.value {
+    padding-bottom: 30px !important;
+}
+
+/* When a duration is Off its interest row collapses (inline display:none via
+   Prototype hide()), leaving the divider hard up against the enable dropdown.
+   Give the enable row the bottom spacing in that case so the gap is preserved. */
+tr[id$="_price_banner_30d_enabled"]:has(+ tr[id$="_price_banner_30d_interest"][style*="display: none"]) > td.label,
+tr[id$="_price_banner_30d_enabled"]:has(+ tr[id$="_price_banner_30d_interest"][style*="display: none"]) > td.value,
+tr[id$="_price_banner_3m_enabled"]:has(+ tr[id$="_price_banner_3m_interest"][style*="display: none"]) > td.label,
+tr[id$="_price_banner_3m_enabled"]:has(+ tr[id$="_price_banner_3m_interest"][style*="display: none"]) > td.value,
+tr[id$="_price_banner_12m_enabled"]:has(+ tr[id$="_price_banner_12m_interest"][style*="display: none"]) > td.label,
+tr[id$="_price_banner_12m_enabled"]:has(+ tr[id$="_price_banner_12m_interest"][style*="display: none"]) > td.value {
+    padding-bottom: 30px !important;
+}

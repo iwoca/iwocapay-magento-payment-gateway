@@ -24,5 +24,9 @@
         "exclude": [
             ".gitignore"
         ]
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "psr/log": "^3.0"
     }
 }
