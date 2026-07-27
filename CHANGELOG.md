@@ -1,3 +1,10 @@
+## [2.5.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.5.0...2.5.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* recover success page on dropped/cross-device session ([76d1a1c](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/76d1a1c1b0eb436d19029bb6f5c3bf7831ec7c09))
+
 # [2.5.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.4.0...2.5.0) (2026-07-21)
 
 

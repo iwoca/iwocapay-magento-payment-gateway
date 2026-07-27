@@ -7,6 +7,9 @@ namespace Iwoca\Iwocapay\Controller\Process;
 use GuzzleHttp\Exception\GuzzleException;
 use Iwoca\Iwocapay\Api\Response\GetOrderInterface;
 use Iwoca\Iwocapay\Model\IwocaApiClient;
+use Iwoca\Iwocapay\Model\IwocaOrderLocator;
+use Iwoca\Iwocapay\Model\LegacyOrderLookup;
+use Iwoca\Iwocapay\Plugin\Checkout\SuccessSessionRehydrationPlugin;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
@@ -28,7 +31,6 @@ use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Model\Service\InvoiceService;
 use Psr\Log\LoggerInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Sales\Model\ResourceModel\Order\Payment\CollectionFactory as PaymentCollectionFactory;
 
 class Callback implements HttpGetActionInterface
 {
@@ -48,7 +50,8 @@ class Callback implements HttpGetActionInterface
     private OrderSender $orderSender;
     private LoggerInterface $logger;
     private ScopeConfigInterface $scopeConfig;
-    private PaymentCollectionFactory $paymentCollectionFactory;
+    private IwocaOrderLocator $iwocaOrderLocator;
+    private LegacyOrderLookup $legacyOrderLookup;
 
     /**
      * @param Context $context
@@ -65,7 +68,8 @@ class Callback implements HttpGetActionInterface
      * @param OrderSender $orderSender
      * @param LoggerInterface $logger
      * @param ScopeConfigInterface $scopeConfig
-     * @param PaymentCollectionFactory $paymentCollectionFactory
+     * @param IwocaOrderLocator $iwocaOrderLocator
+     * @param LegacyOrderLookup $legacyOrderLookup
      */
     public function __construct(
         Context $context,
@@ -82,7 +86,8 @@ class Callback implements HttpGetActionInterface
         OrderSender $orderSender,
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
-        PaymentCollectionFactory $paymentCollectionFactory
+        IwocaOrderLocator $iwocaOrderLocator,
+        LegacyOrderLookup $legacyOrderLookup
     ) {
         $this->context = $context;
         $this->resultFactory = $resultFactory;
@@ -98,7 +103,8 @@ class Callback implements HttpGetActionInterface
         $this->orderSender = $orderSender;
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
-        $this->paymentCollectionFactory = $paymentCollectionFactory;
+        $this->iwocaOrderLocator = $iwocaOrderLocator;
+        $this->legacyOrderLookup = $legacyOrderLookup;
     }
 
     /**
@@ -130,7 +136,7 @@ class Callback implements HttpGetActionInterface
         // Fallback for legacy orders without stored iwocapay_order_id
         $doesOrderContainIwocaOrderReference = !$magentoOrder || !$magentoOrder->getId();
         if ($doesOrderContainIwocaOrderReference) {
-            $magentoOrder = $this->findOrderWithReference($iwocaOrderId, $orderResponse, $redirect);
+            $magentoOrder = $this->findOrderWithReference($iwocaOrderId, $orderResponse);
             if (!$magentoOrder) {
                 return $redirect->setUrl('/checkout/cart');
             }
@@ -156,7 +162,13 @@ class Callback implements HttpGetActionInterface
 
         $this->handleSuccess($magentoOrder, $orderResponse);
 
-        return $redirect->setUrl('/checkout/onepage/success');
+        // Carry the iwoca order id so the success page can rehydrate its session
+        // markers if the buyer returns in a dropped/cross-device session (IP-3483).
+        return $redirect->setUrl(
+            '/checkout/onepage/success?'
+            . SuccessSessionRehydrationPlugin::IWOCA_ORDER_ID_PARAM
+            . '=' . rawurlencode($iwocaOrderId)
+        );
     }
 
     /**
@@ -337,30 +349,7 @@ class Callback implements HttpGetActionInterface
      */
     private function findOrderByIwocaOrderId(string $iwocaOrderId): ?Order
     {
-        $paymentCollection = $this->paymentCollectionFactory->create();
-        $paymentCollection->addFieldToFilter('additional_information', ['like' => '%' . $this->escapeForLike($iwocaOrderId) . '%']);
-
-        foreach ($paymentCollection as $payment) {
-            $additionalInfo = $payment->getAdditionalInformation();
-            if (isset($additionalInfo['iwocapay_order_id']) && $additionalInfo['iwocapay_order_id'] === $iwocaOrderId) {
-                $order = $this->orderFactory->create();
-                $order->load($payment->getParentId());
-                return $order;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Escape special characters for LIKE query
-     *
-     * @param string $value
-     * @return string
-     */
-    private function escapeForLike(string $value): string
-    {
-        return addcslashes($value, '%_\\');
+        return $this->iwocaOrderLocator->findByIwocaOrderId($iwocaOrderId);
     }
 
     /**
@@ -375,7 +364,7 @@ class Callback implements HttpGetActionInterface
         GetOrderInterface $orderResponse,
     ): ?Order {
         // Check if fallback is still active (before 2nd June 2026)
-        if (!isLegacyOrderLookupActive()) {
+        if (!$this->legacyOrderLookup->isActive()) {
             $this->messageManager->addErrorMessage(__('Unable to process your payment. Please contact support.'));
             return null;
         }

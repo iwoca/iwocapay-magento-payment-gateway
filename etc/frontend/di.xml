@@ -10,4 +10,7 @@
     <type name="Magento\Catalog\Block\Product\ListProduct">
         <plugin name="iwocapay_tile_banner_after_price" type="Iwoca\Iwocapay\Plugin\Catalog\ProductListPricePlugin"/>
     </type>
+    <type name="Magento\Checkout\Controller\Onepage\Success">
+        <plugin name="iwocapay_rehydrate_success_session" type="Iwoca\Iwocapay\Plugin\Checkout\SuccessSessionRehydrationPlugin"/>
+    </type>
 </config>
