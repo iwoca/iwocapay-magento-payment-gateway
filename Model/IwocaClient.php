@@ -85,7 +85,6 @@ class IwocaClient
         if ($response->hasHeader('X-Iwocapay-Hmac-Sha256')) {
             $hmacHeaders = $response->getHeader('X-Iwocapay-Hmac-Sha256');
             $hmacHeader = $hmacHeaders[0] ?? null;
-            $this->logger->info(sprintf('iwocaPay HMAC header received for %s: %s', $uri, $hmacHeader));
         }
 
         if (!$hmacHeader) {
@@ -111,18 +110,10 @@ class IwocaClient
         // Verify HMAC matches
         $isValid = $this->hmac->verifyHmac($hmacHeader, $computedHmac);
         if (!$isValid) {
-            $this->logger->error(
-                sprintf(
-                    'HMAC verification failed for %s. Expected: %s, Computed: %s',
-                    $uri,
-                    $hmacHeader,
-                    $computedHmac
-                )
-            );
+            $this->logger->error(sprintf('HMAC verification failed for %s', $uri));
             return false;
         }
 
-        $this->logger->info(sprintf('HMAC verification successful for %s', $uri));
         return true;
     }
 }

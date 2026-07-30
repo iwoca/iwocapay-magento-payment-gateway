@@ -10,6 +10,7 @@ use Iwoca\Iwocapay\Api\Request\CreateOrderPayloadInterfaceFactory;
 use Iwoca\Iwocapay\Api\Response\CreateOrderInterface;
 use Iwoca\Iwocapay\Api\Response\CreateOrderInterfaceFactory;
 use Iwoca\Iwocapay\Model\Config;
+use Iwoca\Iwocapay\Model\IntegrationEventService;
 use Iwoca\Iwocapay\Model\IwocaClientFactory;
 use Iwoca\Iwocapay\Model\Request\CreateOrderPayload;
 use Magento\Checkout\Model\Session;
@@ -44,6 +45,7 @@ class CreateOrder implements HttpGetActionInterface
     private StoreManagerInterface $storeManager;
     private LoggerInterface $logger;
     protected ScopeConfigInterface $scopeConfig;
+    private IntegrationEventService $eventService;
 
     /**
      * @param ResultFactory $resultFactory
@@ -59,6 +61,7 @@ class CreateOrder implements HttpGetActionInterface
      * @param StoreManagerInterface $storeManager
      * @param LoggerInterface $logger
      * @param ScopeConfigInterface $scopeConfig
+     * @param IntegrationEventService $eventService
      */
     public function __construct(
         ResultFactory                      $resultFactory,
@@ -73,7 +76,8 @@ class CreateOrder implements HttpGetActionInterface
         CartRepositoryInterface            $quoteRepository,
         StoreManagerInterface              $storeManager,
         LoggerInterface                    $logger,
-        ScopeConfigInterface               $scopeConfig
+        ScopeConfigInterface               $scopeConfig,
+        IntegrationEventService            $eventService
     )
     {
         $this->resultFactory = $resultFactory;
@@ -89,6 +93,7 @@ class CreateOrder implements HttpGetActionInterface
         $this->storeManager = $storeManager;
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
+        $this->eventService = $eventService;
     }
 
     /**
@@ -238,6 +243,17 @@ class CreateOrder implements HttpGetActionInterface
                     $e->getMessage()
                 )
             );
+            $this->eventService->report(
+                IntegrationEventService::EVENT_ORDER_CREATE_FAILED,
+                array_merge(
+                    [
+                        'endpoint' => 'ecommerce/seller/order',
+                        'reference' => $order->getIncrementId(),
+                    ],
+                    $this->eventService->apiErrorContext($e)
+                ),
+                $this->eventService->shouldSendForException($e)
+            );
             $errorMessage = __('Unable to create the order in iwocaPay. %1', $e->getMessage());
             $order->addCommentToStatusHistory($errorMessage);
             throw new LocalizedException($errorMessage, $e);
@@ -250,6 +266,16 @@ class CreateOrder implements HttpGetActionInterface
                     $rawResponse->getStatusCode(),
                     $order->getIncrementId()
                 )
+            );
+            $this->eventService->report(
+                IntegrationEventService::EVENT_ORDER_CREATE_FAILED,
+                [
+                    'endpoint' => 'ecommerce/seller/order',
+                    'reference' => $order->getIncrementId(),
+                    'http_status' => $rawResponse->getStatusCode(),
+                    'error_detail' => $this->eventService->extractResponseErrorDetail($rawResponse),
+                ],
+                $this->eventService->shouldSendForStatus($rawResponse->getStatusCode())
             );
             $errorMessage = __('Unable to create the order in iwocaPay. %1', $rawResponse);
             $order->addCommentToStatusHistory($errorMessage);

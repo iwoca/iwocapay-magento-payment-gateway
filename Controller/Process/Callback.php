@@ -6,6 +6,7 @@ namespace Iwoca\Iwocapay\Controller\Process;
 
 use GuzzleHttp\Exception\GuzzleException;
 use Iwoca\Iwocapay\Api\Response\GetOrderInterface;
+use Iwoca\Iwocapay\Model\IntegrationEventService;
 use Iwoca\Iwocapay\Model\IwocaApiClient;
 use Iwoca\Iwocapay\Model\IwocaOrderLocator;
 use Iwoca\Iwocapay\Model\LegacyOrderLookup;
@@ -52,6 +53,7 @@ class Callback implements HttpGetActionInterface
     private ScopeConfigInterface $scopeConfig;
     private IwocaOrderLocator $iwocaOrderLocator;
     private LegacyOrderLookup $legacyOrderLookup;
+    private IntegrationEventService $eventService;
 
     /**
      * @param Context $context
@@ -70,6 +72,7 @@ class Callback implements HttpGetActionInterface
      * @param ScopeConfigInterface $scopeConfig
      * @param IwocaOrderLocator $iwocaOrderLocator
      * @param LegacyOrderLookup $legacyOrderLookup
+     * @param IntegrationEventService $eventService
      */
     public function __construct(
         Context $context,
@@ -87,7 +90,8 @@ class Callback implements HttpGetActionInterface
         LoggerInterface $logger,
         ScopeConfigInterface $scopeConfig,
         IwocaOrderLocator $iwocaOrderLocator,
-        LegacyOrderLookup $legacyOrderLookup
+        LegacyOrderLookup $legacyOrderLookup,
+        IntegrationEventService $eventService
     ) {
         $this->context = $context;
         $this->resultFactory = $resultFactory;
@@ -105,6 +109,7 @@ class Callback implements HttpGetActionInterface
         $this->scopeConfig = $scopeConfig;
         $this->iwocaOrderLocator = $iwocaOrderLocator;
         $this->legacyOrderLookup = $legacyOrderLookup;
+        $this->eventService = $eventService;
     }
 
     /**
@@ -127,6 +132,17 @@ class Callback implements HttpGetActionInterface
             $orderResponse = $this->iwocaApiClient->getOrder($iwocaOrderId);
         } catch (GuzzleException | LocalizedException $e) {
             $this->logger->error('iwocaPay callback: Failed to get order response - ' . $e->getMessage());
+            $this->eventService->report(
+                IntegrationEventService::EVENT_API_CALL_FAILED,
+                array_merge(
+                    [
+                        'endpoint' => 'ecommerce/order/fetch',
+                        'iwocapay_order_id' => $iwocaOrderId,
+                    ],
+                    $this->eventService->apiErrorContext($e)
+                ),
+                $this->eventService->shouldSendForException($e)
+            );
             return $this->handleFailure($redirect);
         }
 
@@ -376,6 +392,15 @@ class Callback implements HttpGetActionInterface
         if (!$magentoOrder->getId()) {
             $this->logger->error(
                 sprintf('iwocaPay callback: Order not found by either method for iwoca order ID %s', $iwocaOrderId)
+            );
+            $this->eventService->report(
+                IntegrationEventService::EVENT_ORDER_FAILED_TO_RECONCILE,
+                [
+                    'reason' => 'MAGENTO_ORDER_NOT_FOUND',
+                    'source' => 'callback',
+                    'iwocapay_order_id' => $iwocaOrderId,
+                    'attempted_reference' => $orderResponse->getReference(),
+                ]
             );
             $this->messageManager->addErrorMessage(__('Unable to find your order. Please contact support.'));
             return null;

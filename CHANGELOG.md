@@ -1,3 +1,10 @@
+# [2.6.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.5.1...2.6.0) (2026-07-30)
+
+
+### Features
+
+* automatically report various failures to iwocaPay ([59e9573](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/59e9573dcca335d0ceb8c100c9cd3acfb5307bcc))
+
 ## [2.5.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.5.0...2.5.1) (2026-07-27)
 
 

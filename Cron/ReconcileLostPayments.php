@@ -3,6 +3,7 @@
 namespace Iwoca\Iwocapay\Cron;
 
 use Iwoca\Iwocapay\Model\Config;
+use Iwoca\Iwocapay\Model\IntegrationEventService;
 use Iwoca\Iwocapay\Model\IwocaClientFactory;
 use Iwoca\Iwocapay\Controller\Process\Callback;
 use Magento\Sales\Model\Order;
@@ -66,16 +67,22 @@ class ReconcileLostPayments
      */
     private $orderSender;
 
+    /**
+     * @var IntegrationEventService
+     */
+    private $eventService;
+
     public function __construct(
-        CollectionFactory  $orderCollectionFactory,
-        LoggerInterface    $logger,
-        OrderFactory       $orderFactory,
-        IwocaClientFactory $iwocaClientFactory,
-        Config             $config,
-        Json               $jsonSerializer,
-        TimezoneInterface  $timezone,
-        ResourceConnection $resourceConnection,
-        OrderSender        $orderSender
+        CollectionFactory       $orderCollectionFactory,
+        LoggerInterface         $logger,
+        OrderFactory            $orderFactory,
+        IwocaClientFactory      $iwocaClientFactory,
+        Config                  $config,
+        Json                    $jsonSerializer,
+        TimezoneInterface       $timezone,
+        ResourceConnection      $resourceConnection,
+        OrderSender             $orderSender,
+        IntegrationEventService $eventService
     )
     {
         $this->orderCollectionFactory = $orderCollectionFactory;
@@ -87,6 +94,7 @@ class ReconcileLostPayments
         $this->timezone = $timezone;
         $this->resourceConnection = $resourceConnection;
         $this->orderSender = $orderSender;
+        $this->eventService = $eventService;
     }
 
     /**
@@ -135,6 +143,14 @@ class ReconcileLostPayments
     {
         $extractedOrderID = $this->findUUIDInOrderComments($order);
         if ($extractedOrderID === null) {
+            $this->eventService->report(
+                IntegrationEventService::EVENT_ORDER_FAILED_TO_RECONCILE,
+                [
+                    'reason' => 'ORDER_ID_NOT_FOUND_IN_COMMENTS',
+                    'source' => 'reconcile_cron',
+                    'magento_increment_id' => $order->getIncrementId(),
+                ]
+            );
             throw new LocalizedException(__('Unable to retrieve order ID.'));
         }
 
@@ -154,8 +170,28 @@ class ReconcileLostPayments
 
             return $responseData["data"]["status"];
         } catch (GuzzleException|LocalizedException $e) {
+            $this->eventService->report(
+                IntegrationEventService::EVENT_API_CALL_FAILED,
+                array_merge(
+                    [
+                        'endpoint' => 'ecommerce/order/fetch',
+                        'source' => 'reconcile_cron',
+                        'iwocapay_order_id' => $extractedOrderID,
+                    ],
+                    $this->eventService->apiErrorContext($e)
+                ),
+                $this->eventService->shouldSendForException($e)
+            );
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));
         } catch (\Exception $e) {
+            $this->eventService->report(
+                IntegrationEventService::EVENT_ORDER_FAILED_TO_RECONCILE,
+                [
+                    'reason' => 'INVALID_RESPONSE_FORMAT',
+                    'source' => 'reconcile_cron',
+                    'iwocapay_order_id' => $extractedOrderID,
+                ]
+            );
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()));
         }
     }
@@ -239,9 +275,18 @@ class ReconcileLostPayments
                     $latestStatus = $this->getLatestStatusForIwocaPayOrder($order);
                     if ($latestStatus === "SUCCESSFUL") {
                         $this->markOrderAsProcessed($order);
-                    }
-                    if ($latestStatus === "PENDING") {
+                    } elseif ($latestStatus === "PENDING") {
                         $this->prolongOrKillOrderLife($order);
+                    } elseif (!$this->eventService->isKnownOrderStatus($latestStatus)) {
+                        $this->eventService->report(
+                            IntegrationEventService::EVENT_ORDER_FAILED_TO_RECONCILE,
+                            [
+                                'reason' => 'UNRECOGNISED_STATUS',
+                                'source' => 'reconcile_cron',
+                                'iwocapay_status' => $latestStatus,
+                                'magento_increment_id' => $order->getIncrementId(),
+                            ]
+                        );
                     }
                 } catch (\Exception $e) {
                     $this->logger->error("ReconcileLostPayments: Unable to reconcile order with internal id {$order->getId()}. Error: {$e->getMessage()}");

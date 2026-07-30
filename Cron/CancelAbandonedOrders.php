@@ -3,6 +3,7 @@
 namespace Iwoca\Iwocapay\Cron;
 
 use Iwoca\Iwocapay\Model\Config;
+use Iwoca\Iwocapay\Model\IntegrationEventService;
 use Iwoca\Iwocapay\Model\IwocaClientFactory;
 use Iwoca\Iwocapay\Controller\Process\Callback;
 use Magento\Sales\Model\OrderFactory;
@@ -42,18 +43,25 @@ class CancelAbandonedOrders
     protected $SUCCESSFUL_SYNC_STATE = "Cancelled stranded order via iwocaPay.";
     private $dateTime;
 
+    /**
+     * @var IntegrationEventService
+     */
+    private $eventService;
+
     public function __construct(
-        LoggerInterface    $logger,
-        OrderFactory       $orderFactory,
-        IwocaClientFactory $iwocaClientFactory,
-        Config             $config,
-        DateTime           $dateTime
+        LoggerInterface         $logger,
+        OrderFactory            $orderFactory,
+        IwocaClientFactory      $iwocaClientFactory,
+        Config                  $config,
+        DateTime                $dateTime,
+        IntegrationEventService $eventService
     ) {
         $this->logger = $logger;
         $this->orderFactory = $orderFactory;
         $this->iwocaClientFactory = $iwocaClientFactory;
         $this->config = $config;
         $this->dateTime = $dateTime;
+        $this->eventService = $eventService;
     }
 
     protected function getCancelledIwocaPayOrders(): OrderCollection
@@ -143,6 +151,14 @@ class CancelAbandonedOrders
     {
         $extractedOrderID = $this->findUUIDInOrderComments($order);
         if ($extractedOrderID === null) {
+            $this->eventService->report(
+                IntegrationEventService::EVENT_ORDER_FAILED_TO_RECONCILE,
+                [
+                    'reason' => 'ORDER_ID_NOT_FOUND_IN_COMMENTS',
+                    'source' => 'cancel_cron',
+                    'magento_increment_id' => $order->getIncrementId(),
+                ]
+            );
             throw new LocalizedException(__('Unable to retrieve order ID.'));
         }
 
@@ -156,19 +172,47 @@ class CancelAbandonedOrders
             $order->addStatusHistoryComment("CancelAbandonedOrders: {$this->SUCCESSFUL_SYNC_STATE}");
             $order->save();
         } catch (ClientException $e) {
+            $isTerminalState = false;
             if ($e->hasResponse() && $e->getResponse()->getStatusCode() === 400) {
                 try {
                     $exceptionReason = $this->extractErrorMessageFromException($e);
                     if ($exceptionReason===$this->TERMINAL_STATE_ERROR) {
+                        $isTerminalState = true;
                         $order->addStatusHistoryComment("CancelAbandonedOrders: {$this->ERROR_CANCELLING_TERMINAL_STATE}");
                         $order->save();
                     }
                 } catch (\Exception $saveException) {
                     $this->logger->error("CancelAbandonedOrder: Error while saving order status of {$order->getId()}. Error: {$saveException->getMessage()}");
-                } 
+                }
+            }
+            if (!$isTerminalState) {
+                $this->eventService->report(
+                    IntegrationEventService::EVENT_API_CALL_FAILED,
+                    array_merge(
+                        [
+                            'endpoint' => 'ecommerce/order/cancel',
+                            'source' => 'cancel_cron',
+                            'iwocapay_order_id' => $extractedOrderID,
+                        ],
+                        $this->eventService->apiErrorContext($e)
+                    ),
+                    $this->eventService->shouldSendForException($e)
+                );
             }
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()), $e);
         } catch (GuzzleException|LocalizedException $e) {
+            $this->eventService->report(
+                IntegrationEventService::EVENT_API_CALL_FAILED,
+                array_merge(
+                    [
+                        'endpoint' => 'ecommerce/order/cancel',
+                        'source' => 'cancel_cron',
+                        'iwocapay_order_id' => $extractedOrderID,
+                    ],
+                    $this->eventService->apiErrorContext($e)
+                ),
+                $this->eventService->shouldSendForException($e)
+            );
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()), $e);
         } catch (\Exception $e) {
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()), $e);
