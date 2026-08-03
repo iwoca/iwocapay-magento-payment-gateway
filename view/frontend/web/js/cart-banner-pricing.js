@@ -10,20 +10,10 @@
  */
 require([
     'jquery',
-    'Magento_Customer/js/customer-data'
-], function ($, customerData) {
+    'Magento_Customer/js/customer-data',
+    'Iwoca_Iwocapay/js/cart-pricing'
+], function ($, customerData, cartPricing) {
     'use strict';
-
-    var MIN_AMOUNT = 150;
-    var MAX_AMOUNT = 30000;
-    var TAG = 'iwocapay-price-calculator-cart-banner';
-
-    function formatGbp(value) {
-        return new Intl.NumberFormat('en-GB', {
-            style: 'currency',
-            currency: 'GBP'
-        }).format(value);
-    }
 
     /**
      * Ensure each marker holds a banner element, returning them all.
@@ -31,56 +21,14 @@ require([
     function ensureElements() {
         var elements = [];
         document.querySelectorAll('[data-iwocapay-cart-banner]').forEach(function (marker) {
-            var el = marker.querySelector(TAG);
+            var el = marker.querySelector(cartPricing.TAG);
             if (!el) {
-                el = document.createElement(TAG);
+                el = document.createElement(cartPricing.TAG);
                 marker.appendChild(el);
             }
             elements.push(el);
         });
         return elements;
-    }
-
-    /**
-     * Set the per-term amount + interest attributes on the banner element,
-     * fetching interest-bearing repayments and computing interest-free ones.
-     * A shared request cache dedupes identical fetches across banners.
-     */
-    function applyTerms(el, config, subtotal, requests) {
-        config.terms.forEach(function (term) {
-            // Component attrs use the duration enum with underscores -> hyphens,
-            // e.g. "3_months" -> "amount-3-months" / "interest-3-months".
-            var suffix = term.duration.replace(/_/g, '-');
-            var amountAttr = 'amount-' + suffix;
-            var interestAttr = 'interest-' + suffix;
-
-            el.setAttribute(interestAttr, term.interest);
-
-            // The 30-day offer shows "Pay nothing for 30 days" — no figure to fetch.
-            if (term.months === 1) {
-                el.setAttribute(amountAttr, formatGbp(subtotal));
-                return;
-            }
-
-            // Interest-free terms are pure division — compute client-side.
-            if (term.interest !== 'buyer-pays') {
-                el.setAttribute(amountAttr, formatGbp(subtotal / term.months));
-                return;
-            }
-
-            var key = subtotal + '_' + term.months + '_' + term.interest;
-            if (!requests[key]) {
-                var url = '/iwocapay/banner/pricing?amount=' + encodeURIComponent(subtotal)
-                    + '&months=' + encodeURIComponent(term.months)
-                    + '&pricing=' + encodeURIComponent(term.interest);
-                requests[key] = fetch(url, {credentials: 'omit'}).then(function (res) { return res.json(); });
-            }
-            requests[key].then(function (data) {
-                if (data && data.repayment_amount) {
-                    el.setAttribute(amountAttr, formatGbp(data.repayment_amount));
-                }
-            }).catch(function () {});
-        });
     }
 
     function render(config, subtotal) {
@@ -89,7 +37,7 @@ require([
             return;
         }
 
-        var eligible = subtotal >= MIN_AMOUNT && subtotal <= MAX_AMOUNT && config.terms.length > 0;
+        var eligible = cartPricing.isEligible(subtotal) && config.terms.length > 0;
         var requests = {};
 
         elements.forEach(function (el) {
@@ -104,7 +52,11 @@ require([
             // financed figure (we finance the incl- or excl-tax subtotal to
             // match — see the subtotalField selection below).
             el.setAttribute('includes-vat', config.includesVat ? 'true' : 'false');
-            applyTerms(el, config, subtotal, requests);
+            cartPricing.applyTerms(el, config.terms, subtotal, requests);
+
+            // Fires CUSTOMER_VIEWED_CART_BANNER once the banner is actually
+            // on-screen (e.g. the mini-cart is opened), not just eligible.
+            cartPricing.fireViewOnVisible(el);
         });
     }
 

@@ -17,6 +17,7 @@ class Event implements HttpPostActionInterface, CsrfAwareActionInterface
         'CUSTOMER_VIEWED_BLOCK_BANNER',
         'CUSTOMER_VIEWED_SPENDING_LIMIT_BANNER',
         'CUSTOMER_CLICKED_SPENDING_LIMIT_BANNER',
+        'CUSTOMER_VIEWED_CART_BANNER',
     ];
 
     private RequestInterface $request;

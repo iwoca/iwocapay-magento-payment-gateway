@@ -1,3 +1,10 @@
+# [2.8.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.7.0...2.8.0) (2026-08-03)
+
+
+### Features
+
+* cart banner tracking + fix SELLER_ENABLED_PRICING_BANNERS ([3f9ddb6](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/3f9ddb6230d683555179f44a512694c19b8759f1))
+
 # [2.7.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.6.0...2.7.0) (2026-08-03)
 
 

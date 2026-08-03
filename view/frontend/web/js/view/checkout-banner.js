@@ -13,20 +13,10 @@ define([
     'ko',
     'Magento_Checkout/js/model/quote',
     'Magento_Checkout/js/model/totals',
-    'Magento_Checkout/js/model/step-navigator'
-], function (Component, ko, quote, totalsModel, stepNavigator) {
+    'Magento_Checkout/js/model/step-navigator',
+    'Iwoca_Iwocapay/js/cart-pricing'
+], function (Component, ko, quote, totalsModel, stepNavigator, cartPricing) {
     'use strict';
-
-    var MIN_AMOUNT = 150;
-    var MAX_AMOUNT = 30000;
-    var TAG = 'iwocapay-price-calculator-cart-banner';
-
-    function formatGbp(value) {
-        return new Intl.NumberFormat('en-GB', {
-            style: 'currency',
-            currency: 'GBP'
-        }).format(value);
-    }
 
     return Component.extend({
         defaults: {
@@ -93,7 +83,7 @@ define([
             }
 
             var principal = this.getPrincipal();
-            var eligible = !isNaN(principal) && principal >= MIN_AMOUNT && principal <= MAX_AMOUNT;
+            var eligible = cartPricing.isEligible(principal);
             this.visible(eligible);
             if (!eligible) {
                 return;
@@ -102,34 +92,11 @@ define([
             el.setAttribute('theme', this.config.theme);
             el.setAttribute('includes-vat', this.config.includesVat ? 'true' : 'false');
 
-            var self = this;
-            this.config.terms.forEach(function (term) {
-                var suffix = term.duration.replace(/_/g, '-');
-                var amountAttr = 'amount-' + suffix;
-                el.setAttribute('interest-' + suffix, term.interest);
+            cartPricing.applyTerms(el, this.config.terms, principal, this.requests);
 
-                if (term.months === 1) {
-                    el.setAttribute(amountAttr, formatGbp(principal));
-                    return;
-                }
-                if (term.interest !== 'buyer-pays') {
-                    el.setAttribute(amountAttr, formatGbp(principal / term.months));
-                    return;
-                }
-
-                var key = principal + '_' + term.months + '_' + term.interest;
-                if (!self.requests[key]) {
-                    var url = '/iwocapay/banner/pricing?amount=' + encodeURIComponent(principal)
-                        + '&months=' + encodeURIComponent(term.months)
-                        + '&pricing=' + encodeURIComponent(term.interest);
-                    self.requests[key] = fetch(url, {credentials: 'omit'}).then(function (res) { return res.json(); });
-                }
-                self.requests[key].then(function (data) {
-                    if (data && data.repayment_amount) {
-                        el.setAttribute(amountAttr, formatGbp(data.repayment_amount));
-                    }
-                }).catch(function () {});
-            });
+            // Fires CUSTOMER_VIEWED_CART_BANNER once the banner is on-screen,
+            // not merely rendered — the sidebar instance can be below the fold.
+            cartPricing.fireViewOnVisible(el);
         },
 
         /**

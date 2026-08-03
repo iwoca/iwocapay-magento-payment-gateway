@@ -264,6 +264,26 @@ class Config
     }
 
     /**
+     * Every banner duration with its enabled flag and configured interest,
+     * keyed by short code (30d / 3m / 12m). Unlike getEnabledBannerTerms() this
+     * includes disabled durations (with their configured interest carried
+     * through) — for tracking the full per-duration config, not just what's live.
+     *
+     * @return array<string, array{enabled: bool, interest: string}>
+     */
+    public function getAllBannerDurations(): array
+    {
+        $durations = [];
+        foreach (self::BANNER_TERMS as $term) {
+            $durations[$term['key']] = [
+                'enabled' => $this->scopeConfig->isSetFlag($term['enabledPath'], ScopeInterface::SCOPE_STORE),
+                'interest' => (string) ($this->scopeConfig->getValue($term['interestPath'], ScopeInterface::SCOPE_STORE) ?: 'seller_pays'),
+            ];
+        }
+        return $durations;
+    }
+
+    /**
      * The single most attractive offer for the PDP/PLP banner: the longest
      * enabled instalment term (lowest monthly figure), falling back to the
      * 30-day offer if no instalment term is enabled. Null if nothing enabled.
