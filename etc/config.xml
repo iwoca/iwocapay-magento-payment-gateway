@@ -19,6 +19,7 @@
                 <allowed_payment_terms><![CDATA[["PAY_LATER", "PAY_NOW"]]]></allowed_payment_terms>
                 <allowed_currencies><![CDATA[["GBP"]]]></allowed_currencies>
                 <price_banner_enabled>1</price_banner_enabled>
+                <price_banner_checkout_enabled>0</price_banner_checkout_enabled>
                 <price_banner_30d_enabled>0</price_banner_30d_enabled>
                 <price_banner_30d_interest>seller_pays</price_banner_30d_interest>
                 <price_banner_3m_enabled>1</price_banner_3m_enabled>

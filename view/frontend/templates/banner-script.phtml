@@ -1,6 +1,17 @@
+<?php
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \Iwoca\Iwocapay\ViewModel\CartBannerConfig $cartBannerConfig */
+$cartBannerConfig = $block->getData('cart_banner_config');
+$cartBannerConfigJson = json_encode(
+    $cartBannerConfig->getConfig(),
+    JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP
+);
+?>
 <script defer src="https://iwocapay-static.iwoca.com/sdk/sdk.iife.js"></script>
 <script>
 (function() {
+    window.iwocapayBannerConfig = <?= /* @noEscape */ $cartBannerConfigJson ?>;
+
     function hydrateBanners() {
         var hasSignposting = false;
         var hasSpendingLimit = false;

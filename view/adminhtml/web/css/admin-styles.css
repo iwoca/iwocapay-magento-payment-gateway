@@ -31,8 +31,6 @@ tr[id$="_price_banner_vat"] > td.value {
     padding-top: 30px !important;
 }
 
-tr[id$="_price_banner_enabled"] > td.label,
-tr[id$="_price_banner_enabled"] > td.value,
 tr[id$="_price_banner_30d_interest"] > td.label,
 tr[id$="_price_banner_30d_interest"] > td.value,
 tr[id$="_price_banner_3m_interest"] > td.label,

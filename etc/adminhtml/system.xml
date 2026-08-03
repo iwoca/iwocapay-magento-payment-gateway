@@ -64,10 +64,16 @@
                     <label>Price Banners</label>
                     <frontend_model>Magento\Config\Block\System\Config\Form\Fieldset</frontend_model>
                     <field id="price_banner_enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                        <label>Show price banners</label>
-                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                        <label>Show banners on product &amp; listing pages</label>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\OnOff</source_model>
                         <config_path>payment/iwocapay/price_banner_enabled</config_path>
-                        <comment>Display "pay in X payments" banners on product and listing pages.</comment>
+                        <comment>Display "pay in X payments" banners on product and category pages.</comment>
+                    </field>
+                    <field id="price_banner_checkout_enabled" translate="label" type="select" sortOrder="11" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Show banner at checkout</label>
+                        <source_model>Iwoca\Iwocapay\Model\Config\Source\OnOff</source_model>
+                        <config_path>payment/iwocapay/price_banner_checkout_enabled</config_path>
+                        <comment>Display a banner showing how the customer can pay for their order in instalments, in the checkout order summary and payment step.</comment>
                     </field>
                     <field id="price_banner_30d_enabled" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Pay in 30 days</label>

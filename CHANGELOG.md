@@ -1,3 +1,10 @@
+# [2.7.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.6.0...2.7.0) (2026-08-03)
+
+
+### Features
+
+* cart calculator banner — PageBuilder tile + checkout ([59711fc](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/59711fc1eb74329cf7e6f175dac9b7503f7ed1ba))
+
 # [2.6.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.5.1...2.6.0) (2026-07-30)
 
 

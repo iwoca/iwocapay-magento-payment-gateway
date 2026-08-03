@@ -2,12 +2,17 @@
     <head>
         <script src="Iwoca_Iwocapay::js/reload-mini-cart.js"/>
         <script src="Iwoca_Iwocapay::js/integration-events.js"/>
+        <script src="Iwoca_Iwocapay::js/cart-banner-pricing.js"/>
     </head>
     <body>
         <referenceContainer name="before.body.end">
             <block class="Magento\Framework\View\Element\Template"
                    name="iwocapay.banner.script"
-                   template="Iwoca_Iwocapay::banner-script.phtml"/>
+                   template="Iwoca_Iwocapay::banner-script.phtml">
+                <arguments>
+                    <argument name="cart_banner_config" xsi:type="object">Iwoca\Iwocapay\ViewModel\CartBannerConfig</argument>
+                </arguments>
+            </block>
         </referenceContainer>
     </body>
 </page>

@@ -5,6 +5,7 @@ namespace Iwoca\Iwocapay\Model\Config\Checkout;
 
 use Iwoca\Iwocapay\Model\Config;
 use Iwoca\Iwocapay\Model\Config\Source\PaymentTerms;
+use Iwoca\Iwocapay\ViewModel\CartBannerConfig;
 use Magento\Checkout\Model\ConfigProviderInterface;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\UrlInterface;
@@ -32,19 +33,27 @@ class ConfigProvider implements ConfigProviderInterface
     private UrlInterface $urlBuilder;
 
     /**
+     * @var CartBannerConfig
+     */
+    private CartBannerConfig $cartBannerConfig;
+
+    /**
      * @param Config $config
      * @param Repository $assetRepository
      * @param UrlInterface $urlBuilder
+     * @param CartBannerConfig $cartBannerConfig
      */
     public function __construct(
-        Config       $config,
-        Repository   $assetRepository,
-        UrlInterface $urlBuilder
+        Config           $config,
+        Repository       $assetRepository,
+        UrlInterface     $urlBuilder,
+        CartBannerConfig $cartBannerConfig
     )
     {
         $this->config = $config;
         $this->assetRepository = $assetRepository;
         $this->urlBuilder = $urlBuilder;
+        $this->cartBannerConfig = $cartBannerConfig;
     }
 
     /**
@@ -83,7 +92,8 @@ class ConfigProvider implements ConfigProviderInterface
                 self::CODE_SHARED => $configShared,
                 self::CODE_PAY_LATER => $configPayLater,
                 self::CODE_PAY_NOW => $configPayNow
-            ]
+            ],
+            'iwocapayBanner' => $this->cartBannerConfig->getConfig(),
         ];
     }
 }

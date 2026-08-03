@@ -119,6 +119,7 @@
                 <item name="iwocapay-spending-limit-small-banner" xsi:type="string">iwocapay-spending-limit-small-banner</item>
                 <item name="iwocapay-price-calculator-pdp-banner" xsi:type="string">iwocapay-price-calculator-pdp-banner</item>
                 <item name="iwocapay-price-calculator-plp-banner" xsi:type="string">iwocapay-price-calculator-plp-banner</item>
+                <item name="iwocapay-price-calculator-cart-banner" xsi:type="string">iwocapay-price-calculator-cart-banner</item>
             </argument>
             <argument name="allowedAttributes" xsi:type="array">
                 <item name="duration" xsi:type="string">duration</item>
@@ -135,6 +136,14 @@
                 <item name="data-theme" xsi:type="string">data-theme</item>
                 <item name="data-href" xsi:type="string">data-href</item>
                 <item name="data-hydrated" xsi:type="string">data-hydrated</item>
+                <item name="data-iwocapay-cart-banner" xsi:type="string">data-iwocapay-cart-banner</item>
+                <item name="includes-vat" xsi:type="string">includes-vat</item>
+                <item name="amount-30-days" xsi:type="string">amount-30-days</item>
+                <item name="interest-30-days" xsi:type="string">interest-30-days</item>
+                <item name="amount-3-months" xsi:type="string">amount-3-months</item>
+                <item name="interest-3-months" xsi:type="string">interest-3-months</item>
+                <item name="amount-12-months" xsi:type="string">amount-12-months</item>
+                <item name="interest-12-months" xsi:type="string">interest-12-months</item>
             </argument>
         </arguments>
     </virtualType>

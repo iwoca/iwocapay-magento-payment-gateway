@@ -33,6 +33,7 @@ class Config
     public const XML_CONFIG_PATH_SPECIFIC_COUNTRIES = 'payment/iwocapay/specificcountries';
     public const XML_CONFIG_PATH_ALLOWED_CURRENCIES = 'payment/iwocapay/allowed_currencies';
     public const XML_CONFIG_PATH_PRICE_BANNER_ENABLED = 'payment/iwocapay/price_banner_enabled';
+    public const XML_CONFIG_PATH_PRICE_BANNER_CHECKOUT_ENABLED = 'payment/iwocapay/price_banner_checkout_enabled';
     public const XML_CONFIG_PATH_PRICE_BANNER_30D_ENABLED = 'payment/iwocapay/price_banner_30d_enabled';
     public const XML_CONFIG_PATH_PRICE_BANNER_30D_INTEREST = 'payment/iwocapay/price_banner_30d_interest';
     public const XML_CONFIG_PATH_PRICE_BANNER_3M_ENABLED = 'payment/iwocapay/price_banner_3m_enabled';
@@ -232,6 +233,11 @@ class Config
     public function isPriceBannerEnabled(): bool
     {
         return $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_PRICE_BANNER_ENABLED, ScopeInterface::SCOPE_STORE);
+    }
+
+    public function isCheckoutBannerEnabled(): bool
+    {
+        return $this->scopeConfig->isSetFlag(self::XML_CONFIG_PATH_PRICE_BANNER_CHECKOUT_ENABLED, ScopeInterface::SCOPE_STORE);
     }
 
     /**

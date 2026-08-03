@@ -13,4 +13,7 @@
     <type name="Magento\Checkout\Controller\Onepage\Success">
         <plugin name="iwocapay_rehydrate_success_session" type="Iwoca\Iwocapay\Plugin\Checkout\SuccessSessionRehydrationPlugin"/>
     </type>
+    <type name="Magento\Checkout\CustomerData\Cart">
+        <plugin name="iwocapay_cart_subtotal_incl_tax" type="Iwoca\Iwocapay\Plugin\Checkout\CustomerData\CartPlugin"/>
+    </type>
 </config>
