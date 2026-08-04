@@ -1,3 +1,10 @@
+## [2.8.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.8.0...2.8.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* surface 30-day interest and amount on cart banner ([596b491](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/596b49109c3da337021666fe78a68d90bf07ffcc))
+
 # [2.8.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.7.0...2.8.0) (2026-08-03)
 
 

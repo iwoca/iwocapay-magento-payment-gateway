@@ -17,6 +17,7 @@ class Pricing implements HttpGetActionInterface
     private const CACHE_PREFIX = 'iwocapay_instalment_';
     private const CACHE_TTL = 86400;
     private const RATE_MAP = [
+        1 => '0.025',
         3 => '0.025',
         12 => '0.02',
     ];

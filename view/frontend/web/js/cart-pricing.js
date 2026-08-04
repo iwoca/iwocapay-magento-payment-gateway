@@ -53,9 +53,10 @@ define([], function () {
 
     /**
      * Set the per-term amount + interest attributes on the banner element,
-     * financing `principal`. 30-day terms show the full total, interest-free
-     * terms are pure division, and interest-bearing terms fetch (and cache) a
-     * repayment figure from the pricing endpoint.
+     * financing `principal`. Interest-free terms (incl. the interest-free
+     * 30-day offer, where months === 1 makes this the full total) are pure
+     * division, and interest-bearing terms — 30-day included — fetch (and
+     * cache) a repayment figure from the pricing endpoint.
      *
      * `requests` is a caller-owned cache object that dedupes identical fetches
      * across re-renders — pass the same object each time and reset it (to {})
@@ -69,13 +70,8 @@ define([], function () {
             var amountAttr = 'amount-' + suffix;
             el.setAttribute('interest-' + suffix, term.interest);
 
-            // The 30-day offer shows "Pay nothing for 30 days" — no figure to fetch.
-            if (term.months === 1) {
-                el.setAttribute(amountAttr, formatGbp(principal));
-                return;
-            }
-
             // Interest-free terms are pure division — compute client-side.
+            // (For the 30-day term months === 1, so this is the full total.)
             if (term.interest !== 'buyer-pays') {
                 el.setAttribute(amountAttr, formatGbp(principal / term.months));
                 return;
