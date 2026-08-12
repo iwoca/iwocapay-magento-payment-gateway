@@ -1,3 +1,10 @@
+# [2.9.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.8.1...2.9.0) (2026-08-12)
+
+
+### Features
+
+* gate Magento banner view events on visibility (IntersectionObserver) ([54d6485](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/54d64854842109efa9151292abcbc155fe4ca533))
+
 ## [2.8.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.8.0...2.8.1) (2026-08-04)
 
 

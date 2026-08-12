@@ -12,9 +12,40 @@ $cartBannerConfigJson = json_encode(
 (function() {
     window.iwocapayBannerConfig = <?= /* @noEscape */ $cartBannerConfigJson ?>;
 
+    // Banners frequently render below the fold (or never get scrolled to), and
+    // load-fired events also count every bot/crawler pageview. Gate each view
+    // event on a banner of that type actually intersecting the viewport — the
+    // same approach the cart banner already uses (see js/cart-pricing.js). Where
+    // IntersectionObserver is unavailable, fall back to firing immediately. The
+    // in-memory + 24h dedup in integration-events.js collapses this to one view.
+    var viewObserver = window.IntersectionObserver
+        ? new IntersectionObserver(function(entries, observer) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    observer.unobserve(entry.target);
+                    if (window.fireIwocapayBannerEvent) {
+                        window.fireIwocapayBannerEvent(entry.target.iwocapayViewEvent);
+                    }
+                }
+            });
+        })
+        : null;
+
+    function fireViewOnVisible(elements, eventType) {
+        if (!elements || !elements.length) return;
+        if (!viewObserver) {
+            if (window.fireIwocapayBannerEvent) window.fireIwocapayBannerEvent(eventType);
+            return;
+        }
+        elements.forEach(function(el) {
+            el.iwocapayViewEvent = eventType;
+            viewObserver.observe(el);
+        });
+    }
+
     function hydrateBanners() {
-        var hasSignposting = false;
-        var hasSpendingLimit = false;
+        var signpostingBanners = [];
+        var spendingLimitBanners = [];
         document.querySelectorAll('iwocapay-banner[data-banner-type]').forEach(function(wrapper) {
             if (wrapper.dataset.hydrated) return;
             wrapper.dataset.hydrated = 'true';
@@ -27,7 +58,7 @@ $cartBannerConfigJson = json_encode(
             if (theme) el.setAttribute('theme', theme);
 
             if (type.startsWith('signposting')) {
-                hasSignposting = true;
+                signpostingBanners.push(wrapper);
                 var duration = wrapper.dataset.duration;
                 var interest = wrapper.dataset.interest;
                 if (duration) el.setAttribute('duration', duration);
@@ -35,7 +66,7 @@ $cartBannerConfigJson = json_encode(
             }
 
             if (type.startsWith('spending-limit')) {
-                hasSpendingLimit = true;
+                spendingLimitBanners.push(wrapper);
                 var href = wrapper.dataset.href;
                 var duration = wrapper.dataset.duration;
                 if (href) el.setAttribute('href', href);
@@ -50,13 +81,8 @@ $cartBannerConfigJson = json_encode(
             wrapper.appendChild(el);
         });
 
-        if (hasSignposting && window.fireIwocapayBannerEvent) {
-            window.fireIwocapayBannerEvent('CUSTOMER_VIEWED_BLOCK_BANNER');
-        }
-
-        if (hasSpendingLimit && window.fireIwocapayBannerEvent) {
-            window.fireIwocapayBannerEvent('CUSTOMER_VIEWED_SPENDING_LIMIT_BANNER');
-        }
+        fireViewOnVisible(signpostingBanners, 'CUSTOMER_VIEWED_BLOCK_BANNER');
+        fireViewOnVisible(spendingLimitBanners, 'CUSTOMER_VIEWED_SPENDING_LIMIT_BANNER');
     }
 
     function formatGbp(value) {
@@ -71,9 +97,7 @@ $cartBannerConfigJson = json_encode(
             'iwocapay-price-calculator-pdp-banner[data-amount], iwocapay-price-calculator-plp-banner[data-amount]'
         );
 
-        if (banners.length > 0 && window.fireIwocapayBannerEvent) {
-            window.fireIwocapayBannerEvent('CUSTOMER_VIEWED_PRICING_BANNER');
-        }
+        fireViewOnVisible(banners, 'CUSTOMER_VIEWED_PRICING_BANNER');
 
         var requests = {};
 
