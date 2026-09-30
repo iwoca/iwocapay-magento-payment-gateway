@@ -1,4 +1,4 @@
-require(["jquery", "Magento_Customer/js/customer-data"], function (
+define(["jquery", "Magento_Customer/js/customer-data"], function (
   $,
   customerData
 ) {

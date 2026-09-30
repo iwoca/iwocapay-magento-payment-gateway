@@ -1,3 +1,10 @@
+## [2.9.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.0...2.9.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* stop cart scripts racing requirejs-config on checkout (IWPS-582); nonce banner script for CSP ([0a73410](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/0a734106a4244b3249e26c72c937a5a731cc9988))
+
 # [2.9.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.8.1...2.9.0) (2026-08-12)
 
 

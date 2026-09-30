@@ -8,7 +8,7 @@
  * banner-script.phtml. It re-runs whenever the cart changes, and hides the
  * banner when the basket falls outside iwocaPay's eligible range.
  */
-require([
+define([
     'jquery',
     'Magento_Customer/js/customer-data',
     'Iwoca_Iwocapay/js/cart-pricing'
