@@ -1,3 +1,10 @@
+## [2.9.2](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.1...2.9.2) (2026-10-06)
+
+
+### Bug Fixes
+
+* keep approved iwocaPay orders alive until the buyer draws down ([6c44a4c](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/6c44a4ceb7e6ff800ab0834166b33fd054122f87))
+
 ## [2.9.1](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.0...2.9.1) (2026-09-30)
 
 

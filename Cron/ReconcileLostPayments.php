@@ -28,6 +28,12 @@ use GuzzleHttp\Exception\GuzzleException;
 class ReconcileLostPayments
 {
     /**
+     * Statuses the buyer can still move out of themselves. APPROVED is the long
+     * one: buyers are approved within seconds, then take days to draw down.
+     */
+    private const IN_FLIGHT_STATUSES = ['CREATED', 'PENDING', 'APPROVED'];
+
+    /**
      * @var OrderFactory
      */
     protected $orderFactory;
@@ -255,7 +261,7 @@ class ReconcileLostPayments
      * If an iwocaPay pending order is marked as:
      * - "SUCCESSFUL"
      *      - We mark it as processed.
-     * - "PENDING"
+     * - "CREATED", "PENDING" or "APPROVED"
      *      - We alter the updated_at entry so that it is not killed by Magento\Sales\Model\CronJob\CleanExpiredOrders
      *        this is done by consistently pushing the last modified date to present time until it has been 72 hours
      *        since the order creation. At this point we no longer bump the modified date, allowing it to be cleaned up
@@ -275,7 +281,7 @@ class ReconcileLostPayments
                     $latestStatus = $this->getLatestStatusForIwocaPayOrder($order);
                     if ($latestStatus === "SUCCESSFUL") {
                         $this->markOrderAsProcessed($order);
-                    } elseif ($latestStatus === "PENDING") {
+                    } elseif (in_array($latestStatus, self::IN_FLIGHT_STATUSES, true)) {
                         $this->prolongOrKillOrderLife($order);
                     } elseif (!$this->eventService->isKnownOrderStatus($latestStatus)) {
                         $this->eventService->report(
