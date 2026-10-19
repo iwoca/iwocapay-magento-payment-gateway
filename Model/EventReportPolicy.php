@@ -53,10 +53,26 @@ class EventReportPolicy
 
         $decoded = json_decode($responseBody, true);
         if (is_array($decoded) && isset($decoded['errors'][0]['detail']) && is_string($decoded['errors'][0]['detail'])) {
-            return mb_substr($decoded['errors'][0]['detail'], 0, self::MAX_DETAIL_LENGTH);
+            return $this->truncateDetail($decoded['errors'][0]['detail']);
         }
 
-        return mb_substr($responseBody, 0, self::MAX_DETAIL_LENGTH);
+        return $this->truncateDetail($responseBody);
+    }
+
+    /**
+     * Repair encoding, then truncate, for any free text bound for event metadata.
+     *
+     * Repair has to come first: invalid UTF-8 in an exception message or a raw response body
+     * throws out of Json::serialize when the event is reported, and mb_substr truncates
+     * without fixing it -- so truncating alone leaves the failure in place.
+     */
+    public function truncateDetail(?string $detail): ?string
+    {
+        if ($detail === null) {
+            return null;
+        }
+
+        return mb_substr(mb_convert_encoding($detail, 'UTF-8', 'UTF-8'), 0, self::MAX_DETAIL_LENGTH);
     }
 
     public function isBufferFull(int $bufferedCount): bool

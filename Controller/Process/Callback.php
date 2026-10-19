@@ -6,6 +6,7 @@ namespace Iwoca\Iwocapay\Controller\Process;
 
 use GuzzleHttp\Exception\GuzzleException;
 use Iwoca\Iwocapay\Api\Response\GetOrderInterface;
+use Iwoca\Iwocapay\Model\CallbackOutcomePolicy;
 use Iwoca\Iwocapay\Model\IntegrationEventService;
 use Iwoca\Iwocapay\Model\IwocaApiClient;
 use Iwoca\Iwocapay\Model\IwocaOrderLocator;
@@ -19,6 +20,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Message\ManagerInterface;
+use Magento\Framework\Phrase;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Sales\Api\Data\OrderInterface;
@@ -54,6 +56,7 @@ class Callback implements HttpGetActionInterface
     private IwocaOrderLocator $iwocaOrderLocator;
     private LegacyOrderLookup $legacyOrderLookup;
     private IntegrationEventService $eventService;
+    private CallbackOutcomePolicy $outcomePolicy;
 
     /**
      * @param Context $context
@@ -73,6 +76,7 @@ class Callback implements HttpGetActionInterface
      * @param IwocaOrderLocator $iwocaOrderLocator
      * @param LegacyOrderLookup $legacyOrderLookup
      * @param IntegrationEventService $eventService
+     * @param CallbackOutcomePolicy $outcomePolicy
      */
     public function __construct(
         Context $context,
@@ -91,7 +95,8 @@ class Callback implements HttpGetActionInterface
         ScopeConfigInterface $scopeConfig,
         IwocaOrderLocator $iwocaOrderLocator,
         LegacyOrderLookup $legacyOrderLookup,
-        IntegrationEventService $eventService
+        IntegrationEventService $eventService,
+        CallbackOutcomePolicy $outcomePolicy
     ) {
         $this->context = $context;
         $this->resultFactory = $resultFactory;
@@ -110,6 +115,7 @@ class Callback implements HttpGetActionInterface
         $this->iwocaOrderLocator = $iwocaOrderLocator;
         $this->legacyOrderLookup = $legacyOrderLookup;
         $this->eventService = $eventService;
+        $this->outcomePolicy = $outcomePolicy;
     }
 
     /**
@@ -176,7 +182,18 @@ class Callback implements HttpGetActionInterface
             return $this->handleFailure($redirect, $magentoOrder, $statusCode);
         }
 
-        $this->handleSuccess($magentoOrder, $orderResponse);
+        // The buyer has paid by this point, so nothing below may surface as a 500.
+        // \Throwable rather than LocalizedException: a deadlock or PDOException out of
+        // orderRepository->save() is neither, and would still 500 someone who has paid.
+        try {
+            $outcome = $this->handleSuccess($magentoOrder, $orderResponse);
+        } catch (\Throwable $e) {
+            return $this->handleFinalisationFailure($redirect, $magentoOrder, $iwocaOrderId, $e);
+        }
+
+        if ($this->outcomePolicy->isUnfulfillable($outcome)) {
+            return $this->handlePaidWithoutInvoice($redirect, $magentoOrder, $iwocaOrderId, $outcome);
+        }
 
         // Carry the iwoca order id so the success page can rehydrate its session
         // markers if the buyer returns in a dropped/cross-device session (IP-3483).
@@ -219,19 +236,31 @@ class Callback implements HttpGetActionInterface
     }
 
     /**
+     * Best-effort basket restore. Magento's quote-cleanup cron can purge the quote, which
+     * makes quoteRepository->get() throw -- and this runs on every failed callback, so an
+     * unguarded throw here is a 500 on the most trafficked error path in the controller.
+     * An empty cart is a far better outcome than that.
+     *
      * @param OrderInterface $order
      * @return void
-     * @throws NoSuchEntityException
      */
     private function activateQuoteFromOrder(OrderInterface $order): void
     {
         $quoteId = $order->getQuoteId();
 
-        $quote = $this->quoteRepository->get($quoteId);
-        $quote->setIsActive(1);
-        $this->quoteRepository->save($quote);
-
-        $this->checkoutSession->setQuoteId($quoteId);
+        try {
+            $quote = $this->quoteRepository->get($quoteId);
+            $quote->setIsActive(1);
+            $this->quoteRepository->save($quote);
+            $this->checkoutSession->setQuoteId($quoteId);
+        } catch (\Throwable $e) {
+            $this->logger->error(sprintf(
+                'iwocaPay callback: could not reactivate quote %s for order %s - %s',
+                (string)$quoteId,
+                $order->getIncrementId(),
+                $e->getMessage()
+            ));
+        }
     }
 
     private function setCheckoutSessionOrderData(Order $order): void
@@ -245,15 +274,26 @@ class Callback implements HttpGetActionInterface
     /**
      * @param Order $order
      * @param GetOrderInterface $orderResponse
-     * @return void
+     * @return string One of the CallbackOutcomePolicy::OUTCOME_* constants
      * @throws LocalizedException
      */
-    private function handleSuccess(Order $order, GetOrderInterface $orderResponse): void
+    private function handleSuccess(Order $order, GetOrderInterface $orderResponse): string
     {
-        if ($order->getState() === Order::STATE_PROCESSING || $order->hasInvoices()) {
+        $outcome = $this->outcomePolicy->decide(
+            $order->getState(),
+            $order->hasInvoices(),
+            $order->canInvoice()
+        );
+
+        if ($outcome === CallbackOutcomePolicy::OUTCOME_ALREADY_PROCESSED) {
             $this->logger->info("iwocaPay handleSuccess: Order {$order->getId()} already processed.");
             $this->setCheckoutSessionOrderData($order);
-            return;
+            return $outcome;
+        }
+
+        // Cancellation is terminal on both sides: never reopen, never invoice.
+        if ($outcome !== CallbackOutcomePolicy::OUTCOME_INVOICE) {
+            return $outcome;
         }
 
         $this->createOrderInvoice($order, $orderResponse);
@@ -269,7 +309,244 @@ class Callback implements HttpGetActionInterface
         $order->setCanSendNewEmailFlag(true);
         $this->orderSender->send($order);
         $this->orderRepository->save($order);
+
+        return $outcome;
     }
+
+    /**
+     * Payment landed but the order cannot be invoiced -- almost always because Magento
+     * had already cancelled it while the buyer was away.
+     *
+     * We deliberately do not reuse handleFailure(): that reactivates the quote, and
+     * handing a live basket to someone who has just paid invites a second payment.
+     *
+     * @param Redirect $redirect
+     * @param Order $order
+     * @param string $iwocaOrderId
+     * @param string $outcome
+     * @return Redirect
+     */
+    private function handlePaidWithoutInvoice(
+        Redirect $redirect,
+        Order $order,
+        string $iwocaOrderId,
+        string $outcome
+    ): Redirect {
+        $isCancelled = $outcome === CallbackOutcomePolicy::OUTCOME_PAID_AFTER_CANCELLATION;
+        $state = (string)$order->getState();
+
+        if ($isCancelled) {
+            $comment = __(
+                'iwocaPay payment received after this order was cancelled. No invoice has been raised '
+                . 'and this order needs resolving. Please contact iwocaPay support.'
+            );
+        } else {
+            $comment = __(
+                'iwocaPay payment received but this order cannot be invoiced (state "%1"). No invoice has '
+                . 'been raised and this order needs resolving. Please contact iwocaPay support.',
+                $state
+            );
+        }
+
+        return $this->recordUnfulfillableOrder(
+            $redirect,
+            $order,
+            $comment,
+            sprintf(
+                'iwocaPay callback: payment received for order %s which cannot be invoiced '
+                . '(state %s, outcome %s) - needs manual reconciliation',
+                $order->getIncrementId(),
+                $state,
+                $outcome
+            ),
+            $isCancelled ? 'PAID_AFTER_CANCELLATION' : 'PAID_BUT_NOT_INVOICEABLE',
+            ['iwocapay_order_id' => $iwocaOrderId]
+        );
+    }
+
+    /**
+     * Last-resort net so a paid buyer never sees a 500 from this controller.
+     *
+     * @param Redirect $redirect
+     * @param Order $order
+     * @param string $iwocaOrderId
+     * @param \Throwable $exception
+     * @return Redirect
+     */
+    private function handleFinalisationFailure(
+        Redirect $redirect,
+        Order $order,
+        string $iwocaOrderId,
+        \Throwable $exception
+    ): Redirect {
+        // Deliberately not hasInvoices(): InvoiceService::prepareInvoice() pushes the invoice
+        // onto the order's in-memory collection before register()/save() run, so hasInvoices()
+        // is already true when either of those throws -- and we would tell the merchant the
+        // money was invoiced when nothing persisted and nothing was captured. Only a saved
+        // invoice carries an id.
+        // The probe itself can throw: getInvoiceCollection() lazily loads, so on the DB-failure
+        // path this handler exists for it may issue a query that fails. Default to the
+        // conservative wording -- which is also the honest answer when we cannot confirm.
+        $invoiced = false;
+        try {
+            $invoiced = $this->hasPersistedInvoice($order);
+        } catch (\Throwable $probeException) {
+            $this->quietly('logging the invoice-probe failure', function () use ($order, $probeException) {
+                $this->logger->error(sprintf(
+                    'iwocaPay callback: could not determine invoice state for order %s - %s',
+                    $order->getIncrementId(),
+                    $probeException->getMessage()
+                ));
+            });
+        }
+
+        if ($invoiced) {
+            $comment = __(
+                'iwocaPay payment received and invoiced, but this order could not be fully updated. '
+                . 'Please contact iwocaPay support.'
+            );
+        } else {
+            $comment = __(
+                'iwocaPay payment received but this order could not be updated. No invoice has been raised '
+                . 'and this order needs resolving. Please contact iwocaPay support.'
+            );
+        }
+
+        return $this->recordUnfulfillableOrder(
+            $redirect,
+            $order,
+            $comment,
+            sprintf(
+                'iwocaPay callback: failed to finalise paid order %s - %s - needs manual reconciliation',
+                $order->getIncrementId(),
+                $exception->getMessage()
+            ),
+            'FINALISATION_FAILED',
+            array_merge(
+                ['iwocapay_order_id' => $iwocaOrderId],
+                $this->eventService->apiErrorContext($exception)
+            )
+        );
+    }
+
+    /**
+     * Shared tail for every "money moved but the order cannot be completed" outcome.
+     *
+     * Ordering is deliberate: report to iwoca first, because the event is the only signal
+     * that reliably reaches us, and the order save is the step most likely to fail (a
+     * merchant sales_order_save_after observer rejecting a cancelled order, for instance).
+     * The save is then guarded so it can never cost the buyer a redirect.
+     *
+     * @param Redirect $redirect
+     * @param Order $order
+     * @param Phrase $comment
+     * @param string $logMessage
+     * @param string $reason
+     * @param array $extraMetaData
+     * @return Redirect
+     */
+    private function recordUnfulfillableOrder(
+        Redirect $redirect,
+        Order $order,
+        Phrase $comment,
+        string $logMessage,
+        string $reason,
+        array $extraMetaData = []
+    ): Redirect {
+        // Everything below is best-effort. This method exists so a buyer who has paid never
+        // sees a 500, so nothing in it may throw -- including the logging and reporting
+        // themselves (an unwritable var/log throws out of the stream handler; non-UTF-8
+        // metadata throws out of Json::serialize).
+        $this->quietly('error logging', function () use ($logMessage) {
+            $this->logger->error($logMessage);
+        });
+
+        $this->quietly('reporting to iwoca', function () use ($order, $reason, $extraMetaData) {
+            $this->eventService->report(
+                IntegrationEventService::EVENT_ORDER_FAILED_TO_RECONCILE,
+                array_merge(
+                    [
+                        'reason' => $reason,
+                        'source' => 'callback',
+                        'magento_increment_id' => $order->getIncrementId(),
+                        'magento_order_state' => (string)$order->getState(),
+                    ],
+                    $extraMetaData
+                )
+            );
+        });
+
+        $this->quietly('annotating the order', function () use ($order, $comment) {
+            $order->addCommentToStatusHistory($comment);
+            $this->orderRepository->save($order);
+        });
+
+        $this->quietly('showing the buyer a message', function () use ($order) {
+            $this->messageManager->addErrorMessage(
+                __(
+                    'We have received your payment, but there was a problem completing your order (%1). '
+                    . 'Please contact iwocaPay support.',
+                    $order->getIncrementId()
+                )
+            );
+        });
+
+        return $redirect->setPath('/');
+    }
+
+    /**
+     * Run a best-effort step, swallowing anything it throws but leaving a breadcrumb.
+     *
+     * Only for use on the paid-buyer failure paths, where surfacing a secondary failure
+     * would replace a usable message with the 500 this controller exists to avoid.
+     *
+     * Swallowing silently is not good enough: the order save here is the step most likely
+     * to fail, so losing its reason would make the commonest failure the one with no trace.
+     * The log is itself guarded, since an unwritable var/log is one of the ways a step fails.
+     *
+     * @param string $context
+     * @param callable $step
+     * @return void
+     */
+    private function quietly(string $context, callable $step): void
+    {
+        try {
+            $step();
+        } catch (\Throwable $suppressed) {
+            try {
+                $this->logger->error(sprintf(
+                    'iwocaPay callback: %s failed and was suppressed - %s: %s',
+                    $context,
+                    get_class($suppressed),
+                    $suppressed->getMessage()
+                ));
+            } catch (\Throwable $unloggable) {
+                // Nowhere left to log to.
+            }
+        }
+    }
+
+    /**
+     * Whether a *saved* invoice exists for this order.
+     *
+     * hasInvoices() cannot answer this: InvoiceService::prepareInvoice() adds the invoice to
+     * the order's in-memory collection before register()/save(), so it reports true even when
+     * persistence failed. Only a saved invoice has an id.
+     *
+     * @param Order $order
+     * @return bool
+     */
+    private function hasPersistedInvoice(Order $order): bool
+    {
+        foreach ($order->getInvoiceCollection() as $invoice) {
+            if ($invoice->getId()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     /**
      * @param Order $order

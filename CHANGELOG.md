@@ -1,3 +1,10 @@
+## [2.9.3](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.2...2.9.3) (2026-10-19)
+
+
+### Bug Fixes
+
+* make iwocaPay order cancellation work end to end, and stop the callback 500 (IWPS-630) ([79e2e2f](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/79e2e2f8f3b48e7ec166fe37995450baf1cd091f))
+
 ## [2.9.2](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.1...2.9.2) (2026-10-06)
 
 

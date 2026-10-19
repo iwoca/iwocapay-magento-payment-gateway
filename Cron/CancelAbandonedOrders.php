@@ -78,7 +78,12 @@ class CancelAbandonedOrders
                 ['method']
             )
             ->addFieldToFilter('payment.method', ['in' => ['iwocapay', 'iwocapay_paylater', 'iwocapay_paynow']])
-            ->addFieldToFilter('main_table.status', Order::STATE_CANCELED)
+            // Filter on state, not status. STATE_CANCELED is a *state* value; it only matches the
+            // status column because Magento's default status for that state shares the name. A
+            // merchant with a custom status assigned to the canceled state would otherwise have
+            // their cancelled orders invisible here forever, holding stock against pay links we
+            // never release -- the exact outcome this cron exists to prevent.
+            ->addFieldToFilter('main_table.state', Order::STATE_CANCELED)
             ->addFieldToFilter('main_table.created_at', ['gteq' => $threeDaysAgo]); // first protection against querying old orders
     }
 
@@ -165,7 +170,7 @@ class CancelAbandonedOrders
         try {
             $this->iwocaClientFactory->create()->delete(
                 $this->config->getApiEndpoint(
-                    Config::CONFIG_TYPE_GET_ORDER_ENDPOINT,
+                    Config::CONFIG_TYPE_CANCEL_ORDER_ENDPOINT,
                     [':' . Callback::IWOCA_ORDER_ID_PARAM => $extractedOrderID]
                 )
             );
@@ -173,19 +178,54 @@ class CancelAbandonedOrders
             $order->save();
         } catch (ClientException $e) {
             $isTerminalState = false;
+            $sentinelPersisted = false;
             if ($e->hasResponse() && $e->getResponse()->getStatusCode() === 400) {
                 try {
                     $exceptionReason = $this->extractErrorMessageFromException($e);
                     if ($exceptionReason===$this->TERMINAL_STATE_ERROR) {
                         $isTerminalState = true;
+                        // Sentinel string -- shouldNotRunOnOrder() matches on it, so keep it stable
+                        // and put the merchant-readable detail in a separate comment.
                         $order->addStatusHistoryComment("CancelAbandonedOrders: {$this->ERROR_CANCELLING_TERMINAL_STATE}");
+                        $order->addStatusHistoryComment(
+                            __(
+                                'iwocaPay could not cancel this pay link because the buyer appears to have '
+                                . 'already paid. Stock may have been released for an order that was paid for. '
+                                . 'Please contact iwocaPay support.'
+                            )
+                        );
                         $order->save();
+                        $sentinelPersisted = true;
                     }
                 } catch (\Exception $saveException) {
                     $this->logger->error("CancelAbandonedOrder: Error while saving order status of {$order->getId()}. Error: {$saveException->getMessage()}");
                 }
             }
-            if (!$isTerminalState) {
+            if ($isTerminalState) {
+                // Money has most likely moved while the Magento order was cancelled and its stock
+                // released -- the worst outcome the flow can produce, so it is always reported.
+                // When the sentinel persisted, shouldNotRunOnOrder() bars the order from future
+                // runs and this fires once. When the save failed it will fire again every tick
+                // until the three-day window closes, so flag which case this is rather than
+                // leaving a triager to guess at identical duplicates.
+                if (!$sentinelPersisted) {
+                    $this->logger->error(
+                        "CancelAbandonedOrder: terminal-state sentinel did not persist for order "
+                        . "{$order->getIncrementId()}; this escalation will repeat until the order "
+                        . "ages out of the three-day window."
+                    );
+                }
+                $this->eventService->report(
+                    IntegrationEventService::EVENT_ORDER_FAILED_TO_RECONCILE,
+                    [
+                        'reason' => 'PAID_AFTER_CANCELLATION',
+                        'source' => 'cancel_cron',
+                        'iwocapay_order_id' => $extractedOrderID,
+                        'magento_increment_id' => $order->getIncrementId(),
+                        'sentinel_persisted' => $sentinelPersisted,
+                    ]
+                );
+            } else {
                 $this->eventService->report(
                     IntegrationEventService::EVENT_API_CALL_FAILED,
                     array_merge(
@@ -214,7 +254,25 @@ class CancelAbandonedOrders
                 $this->eventService->shouldSendForException($e)
             );
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()), $e);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Nothing above handled this, so it is unreported -- and a raw Error here is the
+            // failure class that kept this cron broken and invisible for six months. Report it
+            // now, while the true type and message are intact: once rethrown below it is a
+            // LocalizedException whose message has been reformatted, and apiErrorContext()
+            // would describe the wrapper instead of the cause. Sent unconditionally because
+            // shouldSendForException() models API status codes, which an Error does not have.
+            $this->eventService->report(
+                IntegrationEventService::EVENT_UNHANDLED_EXCEPTION,
+                array_merge(
+                    [
+                        'source' => 'cancel_cron',
+                        'iwocapay_order_id' => $extractedOrderID,
+                        'magento_increment_id' => $order->getIncrementId(),
+                        'exception_class' => get_class($e),
+                    ],
+                    $this->eventService->apiErrorContext($e)
+                )
+            );
             throw new LocalizedException(__('An error occurred: %1', $e->getMessage()), $e);
         }
     }
@@ -238,12 +296,45 @@ class CancelAbandonedOrders
                 try {
                     $this->cancelIwocaPayOrder($order);
                     $this->markOrderAsCancelled($order);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    // \Throwable, not \Exception: an Error here (e.g. an undefined method on the
+                    // client) would otherwise escape the loop and abandon every remaining order.
                     $this->logger->error("CancelAbandonedOrder: Unable to cancel order with internal id {$order->getId()}. Error: {$e->getMessage()}");
+
+                    // cancelIwocaPayOrder() reports every failure it sees, including raw Errors,
+                    // and rethrows them all as LocalizedException -- so reporting a
+                    // LocalizedException again here would double-count it.
+                    //
+                    // This is a type check standing in for an origin check, and the two are not
+                    // the same: markOrderAsCancelled()'s save throws CouldNotSaveException, which
+                    // extends LocalizedException, so a failure there is suppressed here despite
+                    // being unreported. Tolerated because that method is cosmetic -- the retry
+                    // gate is SUCCESSFUL_SYNC_STATE, already written inside cancelIwocaPayOrder()
+                    // before this point. A marker exception would make the check exact; see
+                    // IP-3649.
+                    if (!$e instanceof LocalizedException) {
+                        $this->eventService->report(
+                            IntegrationEventService::EVENT_UNHANDLED_EXCEPTION,
+                            array_merge(
+                                [
+                                    'source' => 'cancel_cron',
+                                    'magento_increment_id' => $order->getIncrementId(),
+                                ],
+                                $this->eventService->apiErrorContext($e)
+                            )
+                        );
+                    }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('CancelAbandonedOrder: Error in CancelAbandonedOrder CRON job' . $e->getMessage());
+            $this->eventService->report(
+                IntegrationEventService::EVENT_UNHANDLED_EXCEPTION,
+                array_merge(
+                    ['source' => 'cancel_cron_job'],
+                    $this->eventService->apiErrorContext($e)
+                )
+            );
         }
     }
 }

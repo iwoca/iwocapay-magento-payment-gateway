@@ -48,17 +48,24 @@ class Config
     public const XML_CONFIG_PATH_API_BASE_PATH_IWOCAPAY = 'payment/iwocapay/api_base_path_iwocapay';
     public const XML_CONFIG_PATH_API_PATH_CREATE_ORDER = 'payment/iwocapay/api_path_create_order';
     public const XML_CONFIG_PATH_API_PATH_GET_ORDER = 'payment/iwocapay/api_path_get_order';
+    public const XML_CONFIG_PATH_API_PATH_CANCEL_ORDER = 'payment/iwocapay/api_path_cancel_order';
     public const XML_CONFIG_PATH_API_PATH_CONNECTION_CHECK = 'payment/iwocapay/api_path_connection_check';
 
     public const CONFIG_TYPE_CREATE_ORDER_ENDPOINT = 'create-order';
     public const CONFIG_TYPE_GET_ORDER_ENDPOINT = 'get-order';
+    public const CONFIG_TYPE_CANCEL_ORDER_ENDPOINT = 'cancel-order';
     public const ENDPOINT_CONFIG_MAPPING = [
         self::CONFIG_TYPE_CREATE_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_CREATE_ORDER,
-        self::CONFIG_TYPE_GET_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_GET_ORDER
+        self::CONFIG_TYPE_GET_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_GET_ORDER,
+        self::CONFIG_TYPE_CANCEL_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_PATH_CANCEL_ORDER
     ];
+    // Cancellation lives on the lending base path, not the iwocapay one. getApiBasePath()
+    // falls back to lending for an unmapped type, silently and with no error, so every type
+    // in ENDPOINT_CONFIG_MAPPING must appear here too. ConfigEndpointMappingTest enforces it.
     public const ENDPOINT_BASE_PATH_MAPPING = [
         self::CONFIG_TYPE_CREATE_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_BASE_PATH_LENDING,
-        self::CONFIG_TYPE_GET_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_BASE_PATH_IWOCAPAY
+        self::CONFIG_TYPE_GET_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_BASE_PATH_IWOCAPAY,
+        self::CONFIG_TYPE_CANCEL_ORDER_ENDPOINT => self::XML_CONFIG_PATH_API_BASE_PATH_LENDING
     ];
 
     /**

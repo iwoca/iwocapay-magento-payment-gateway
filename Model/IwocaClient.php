@@ -72,6 +72,23 @@ class IwocaClient
     }
 
     /**
+     * Perform DELETE request (no HMAC verification)
+     *
+     * The cancel endpoint answers 204 with an empty, unsigned body, so there is no
+     * signature to verify. Routing it through verifyHmacSignature() would fail at
+     * the missing-header check and throw on a *successful* cancellation.
+     *
+     * @param string $uri
+     * @param array $options
+     * @return ResponseInterface
+     * @throws GuzzleException
+     */
+    public function delete(string $uri, array $options = []): ResponseInterface
+    {
+        return $this->guzzleClient->delete($uri, $options);
+    }
+
+    /**
      * Verify HMAC signature on response
      *
      * @param ResponseInterface $response

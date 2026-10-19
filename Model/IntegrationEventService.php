@@ -100,7 +100,7 @@ class IntegrationEventService
         return [
             'http_status' => $statusCode,
             'error_detail' => $detail,
-            'exception_message' => mb_substr($exception->getMessage(), 0, EventReportPolicy::MAX_DETAIL_LENGTH),
+            'exception_message' => $this->policy->truncateDetail($exception->getMessage()),
         ];
     }
 
