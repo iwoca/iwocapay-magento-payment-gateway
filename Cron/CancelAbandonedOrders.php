@@ -2,6 +2,7 @@
 
 namespace Iwoca\Iwocapay\Cron;
 
+use Iwoca\Iwocapay\Model\CancelOrderOutcomePolicy;
 use Iwoca\Iwocapay\Model\Config;
 use Iwoca\Iwocapay\Model\IntegrationEventService;
 use Iwoca\Iwocapay\Model\IwocaClientFactory;
@@ -38,7 +39,7 @@ class CancelAbandonedOrders
     protected $logger;
     protected $MARKED_FOR_CANCELLATION_ID = "Marked for cancellation in iwocaPay.";
     protected $CANCELLED_ID = "Cancelled in iwocaPay.";
-    protected $TERMINAL_STATE_ERROR = "Can't cancel order of terminal state";
+    protected $TERMINAL_STATE_ERROR = CancelOrderOutcomePolicy::TERMINAL_STATE_ERROR;
     protected $ERROR_CANCELLING_TERMINAL_STATE = "Unable to cancel order locally due to unexpected terminal status via iwocaPay.";
     protected $SUCCESSFUL_SYNC_STATE = "Cancelled stranded order via iwocaPay.";
     private $dateTime;

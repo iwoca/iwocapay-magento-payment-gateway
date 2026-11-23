@@ -1,3 +1,10 @@
+## [2.9.4](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.3...2.9.4) (2026-11-23)
+
+
+### Bug Fixes
+
+* cancel the iwocaPay order as soon as the buyer returns to the cart ([0d2b47c](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/0d2b47c74d953aad240c95a41c861b96201411b8))
+
 ## [2.9.3](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.2...2.9.3) (2026-10-19)
 
 

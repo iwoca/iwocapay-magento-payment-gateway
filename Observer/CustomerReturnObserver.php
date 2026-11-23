@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 namespace Iwoca\Iwocapay\Observer;
 
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
+use Iwoca\Iwocapay\Controller\Process\Callback;
 use Iwoca\Iwocapay\Helper\PageIdentifier;
 use Iwoca\Iwocapay\Helper\PageType;
+use Iwoca\Iwocapay\Model\CancelOrderOutcomePolicy;
+use Iwoca\Iwocapay\Model\Config;
+use Iwoca\Iwocapay\Model\IntegrationEventService;
+use Iwoca\Iwocapay\Model\IwocaClientFactory;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Event\Observer;
 use Psr\Log\LoggerInterface;
@@ -33,6 +41,9 @@ It checks the following conditions:
        (this only happens if the customer is returning to the store via the back button)
     - check if the current quote is empty (this avoids overriding the quote with the previous one)
     - check if the last order was paid with iwocaPay
+    - cancel the pay link in iwocaPay first, so the buyer can no longer pay for an order we are about to cancel
+       - if iwocaPay reports it already paid, leave the order and the quote alone
+       - if iwocaPay can't be reached, carry on and leave the order marked for the cancel cron to retry
     - cancel the previous order
     - restore the quote
 - If the request is a redirect to iwocaPay:
@@ -104,6 +115,26 @@ class CustomerReturnObserver implements ObserverInterface
     protected $scopeConfig;
 
     /**
+     * @var IwocaClientFactory
+     */
+    protected $iwocaClientFactory;
+
+    /**
+     * @var Config
+     */
+    protected $config;
+
+    /**
+     * @var IntegrationEventService
+     */
+    protected $eventService;
+
+    /**
+     * @var CancelOrderOutcomePolicy
+     */
+    protected $cancelOrderOutcomePolicy;
+
+    /**
      * Constructor
      *
      * @param LoggerInterface $logger
@@ -114,16 +145,24 @@ class CustomerReturnObserver implements ObserverInterface
      * @param CartRepositoryInterface $cartRepository
      * @param RequestInterface $request
      * @param ScopeConfigInterface $scopeConfig
+     * @param IwocaClientFactory $iwocaClientFactory
+     * @param Config $config
+     * @param IntegrationEventService $eventService
+     * @param CancelOrderOutcomePolicy $cancelOrderOutcomePolicy
      */
     public function __construct(
-        LoggerInterface         $logger,
-        QuoteRepository         $quoteRepository,
-        CheckoutSession         $checkoutSession,
-        OrderFactory            $orderFactory,
-        PageIdentifier          $pageIdentifier,
-        CartRepositoryInterface $cartRepository,
-        RequestInterface        $request,
-        ScopeConfigInterface    $scopeConfig,
+        LoggerInterface          $logger,
+        QuoteRepository          $quoteRepository,
+        CheckoutSession          $checkoutSession,
+        OrderFactory             $orderFactory,
+        PageIdentifier           $pageIdentifier,
+        CartRepositoryInterface  $cartRepository,
+        RequestInterface         $request,
+        ScopeConfigInterface     $scopeConfig,
+        IwocaClientFactory       $iwocaClientFactory,
+        Config                   $config,
+        IntegrationEventService  $eventService,
+        CancelOrderOutcomePolicy $cancelOrderOutcomePolicy,
     ) {
         $this->logger = $logger;
         $this->quoteRepository = $quoteRepository;
@@ -133,6 +172,10 @@ class CustomerReturnObserver implements ObserverInterface
         $this->cartRepository = $cartRepository;
         $this->request = $request;
         $this->scopeConfig = $scopeConfig;
+        $this->iwocaClientFactory = $iwocaClientFactory;
+        $this->config = $config;
+        $this->eventService = $eventService;
+        $this->cancelOrderOutcomePolicy = $cancelOrderOutcomePolicy;
     }
 
 
@@ -166,11 +209,15 @@ class CustomerReturnObserver implements ObserverInterface
 
         $currentQuote = $this->checkoutSession->getQuote();
 
-        if ($currentQuote->getItemsCount() > 0) return;
+        if ($currentQuote->getItemsCount() > 0) {
+            return;
+        }
 
         $orderId = $this->checkoutSession->getLastOrderId();
 
-        if (!$orderId) return;
+        if (!$orderId) {
+            return;
+        }
 
         $order = $this->orderFactory->create()->load($orderId);
         $payment = $order->getPayment();
@@ -182,10 +229,24 @@ class CustomerReturnObserver implements ObserverInterface
             return;
         }
 
-        if ($order->getStatus() !== \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) return;
+        if ($order->getStatus() !== \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
+            return;
+        }
 
-        if (!$order->canCancel()) return;
+        if (!$order->canCancel()) {
+            return;
+        }
 
+        $order = $this->handleIwocaPayCancellation($order, $orderId);
+        if ($order === null) {
+            return;
+        }
+
+        $this->restoreQuote($order);
+    }
+
+    private function handleIwocaPayCancellation(\Magento\Sales\Model\Order $order, $orderId): ?\Magento\Sales\Model\Order
+    {
         $isAbandonedCartCancellationDisabled = $this->scopeConfig->getValue(
             'payment/iwocapay/advanced/disable_abandoned_cart_cancellations',
             \Magento\Store\Model\ScopeInterface::SCOPE_STORE
@@ -193,29 +254,64 @@ class CustomerReturnObserver implements ObserverInterface
         if ($isAbandonedCartCancellationDisabled) {
             $order->addStatusHistoryComment(__('User returned to checkout cart without completing iwocaPay. iwocaPay will not automatically cancel the order as this option is disabled in settings.'));
             $order->save();
-        }else {
-            try {
-                $order->cancel();
-                $order->addStatusHistoryComment(__('Order canceled as user returned to checkout cart without completing iwocaPay.'));
-                $order->addStatusHistoryComment(__('Marked for cancellation in iwocaPay.'));
-                $order->save();
-            } catch (\Exception $e) {
-                $this->logger->error('Error canceling order: ' . $e->getMessage());
-            }
+            return $order;
         }
 
+        $outcome = $this->cancelInIwocaPay($order);
+
+        // Reload: the callback may have invoiced it while we waited on iwocaPay.
+        $order = $this->orderFactory->create()->load($orderId);
+        if ($order->getStatus() !== \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
+            return null;
+        }
+
+        if (!$this->cancelOrderOutcomePolicy->shouldCancelLocally($outcome)) {
+            // Restoring the quote would hand a live basket to a buyer who has already paid.
+            $this->checkoutSession->setData('allow_cancel_order', false);
+            try {
+                $order->addStatusHistoryComment(__('User returned to checkout cart, but iwocaPay reports this order as already paid, so it has not been cancelled.'));
+                $order->save();
+            } catch (\Throwable $e) {
+                $this->logger->error('Error saving order: ' . $e->getMessage());
+            }
+            return null;
+        }
+
+        try {
+            $order->cancel();
+            $order->addStatusHistoryComment(__('Order canceled as user returned to checkout cart without completing iwocaPay.'));
+            if ($outcome === CancelOrderOutcomePolicy::OUTCOME_CANCELLED) {
+                $order->addStatusHistoryComment(__('Cancelled in iwocaPay.'));
+            } else {
+                // The cancel cron picks orders up by this comment and retries the cancel.
+                $order->addStatusHistoryComment(__('Marked for cancellation in iwocaPay.'));
+            }
+            $order->save();
+        } catch (\Throwable $e) {
+            $this->logger->error('Error canceling order: ' . $e->getMessage());
+        }
+
+        return $order;
+    }
+
+    private function restoreQuote(\Magento\Sales\Model\Order $order): void
+    {
         $quoteId = $order->getQuoteId();
 
-        if (!$quoteId) return;
+        if (!$quoteId) {
+            return;
+        }
 
         try {
             $quote = $this->quoteRepository->get($quoteId);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('Error loading quote: ' . $e->getMessage());
             return;
         }
 
-        if (!$quote) return;
+        if (!$quote) {
+            return;
+        }
 
         foreach ($quote->getAllItems() as $item) {
             $item->setIsActive(true);
@@ -226,11 +322,83 @@ class CustomerReturnObserver implements ObserverInterface
 
         try {
             $this->quoteRepository->save($quote); // Save the quote to ensure changes are persisted
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('Error saving quote: ' . $e->getMessage());
             return;
         }
 
         $this->checkoutSession->replaceQuote($quote);
+    }
+
+    // Must not throw: runs before every storefront response.
+    private function cancelInIwocaPay(\Magento\Sales\Model\Order $order): string
+    {
+        $iwocaOrderId = $order->getPayment()->getAdditionalInformation('iwocapay_order_id');
+        if (!$iwocaOrderId) {
+            return CancelOrderOutcomePolicy::OUTCOME_DEFER_TO_CRON;
+        }
+
+        try {
+            $response = $this->iwocaClientFactory->create()->delete(
+                $this->config->getApiEndpoint(
+                    Config::CONFIG_TYPE_CANCEL_ORDER_ENDPOINT,
+                    [':' . Callback::IWOCA_ORDER_ID_PARAM => $iwocaOrderId]
+                ),
+                [RequestOptions::TIMEOUT => 2, RequestOptions::CONNECT_TIMEOUT => 1]
+            );
+
+            return $this->cancelOrderOutcomePolicy->decide($response->getStatusCode(), null);
+        } catch (\Throwable $e) {
+            try {
+                $response = $e instanceof RequestException ? $e->getResponse() : null;
+                $outcome = $this->cancelOrderOutcomePolicy->decide(
+                    $response ? $response->getStatusCode() : null,
+                    $response ? $this->eventService->extractResponseErrorDetail($response) : null
+                );
+            } catch (\Throwable $classificationException) {
+                $outcome = CancelOrderOutcomePolicy::OUTCOME_DEFER_TO_CRON;
+            }
+
+            if ($outcome === CancelOrderOutcomePolicy::OUTCOME_DEFER_TO_CRON) {
+                $this->reportCancelFailure($e, $iwocaOrderId);
+            }
+
+            return $outcome;
+        }
+    }
+
+    private function reportCancelFailure(\Throwable $e, string $iwocaOrderId): void
+    {
+        try {
+            if ($e instanceof GuzzleException) {
+                $this->eventService->report(
+                    IntegrationEventService::EVENT_API_CALL_FAILED,
+                    array_merge(
+                        [
+                            'endpoint' => 'ecommerce/order/cancel',
+                            'source' => 'customer_return',
+                            'iwocapay_order_id' => $iwocaOrderId,
+                        ],
+                        $this->eventService->apiErrorContext($e)
+                    ),
+                    $this->eventService->shouldSendForException($e)
+                );
+                return;
+            }
+
+            $this->eventService->report(
+                IntegrationEventService::EVENT_UNHANDLED_EXCEPTION,
+                array_merge(
+                    [
+                        'source' => 'customer_return',
+                        'iwocapay_order_id' => $iwocaOrderId,
+                        'exception_class' => get_class($e),
+                    ],
+                    $this->eventService->apiErrorContext($e)
+                )
+            );
+        } catch (\Throwable $reportException) {
+            $this->logger->error('Error reporting failed iwocaPay cancellation: ' . $reportException->getMessage());
+        }
     }
 }
