@@ -1,3 +1,10 @@
+# [2.10.0](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.4...2.10.0) (2026-11-24)
+
+
+### Features
+
+* lower the Pay Later minimum order to £10 (IP-3818) ([c65756a](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/commit/c65756a84e86f168ea31183d596a6ceb663023ef))
+
 ## [2.9.4](https://git.iwoca.co.uk/iwoca/iwocapay/iwocapay-magento-payment-gateway/compare/2.9.3...2.9.4) (2026-11-23)
 
 

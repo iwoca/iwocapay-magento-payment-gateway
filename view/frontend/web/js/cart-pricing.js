@@ -9,7 +9,7 @@ define([], function () {
     'use strict';
 
     // iwocaPay's lending range — the banner only shows for totals within it.
-    var MIN_AMOUNT = 150;
+    var MIN_AMOUNT = 10;
     var MAX_AMOUNT = 30000;
     var TAG = 'iwocapay-price-calculator-cart-banner';
 

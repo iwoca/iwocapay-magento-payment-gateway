@@ -40,7 +40,7 @@ class CartPlugin
         // Decorates the core cart section, which the mini-cart syncs on every
         // storefront page. A throw here (locked/corrupt quote, DB hiccup during
         // totals collection) would break the whole section site-wide, so degrade
-        // to a 0.0 subtotal — that falls outside the £150–£30k gate, hiding the
+        // to a 0.0 subtotal — that falls outside the £10–£30k gate, hiding the
         // banner cleanly.
         try {
             $totals = $this->checkoutSession->getQuote()->getTotals();
